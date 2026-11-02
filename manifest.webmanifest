@@ -1,7 +1,7 @@
 {
-  "name": "__APP_NAME__",
-  "short_name": "__APP_NAME__",
-  "description": "__APP_DESC__",
+  "name": "APK Factory",
+  "short_name": "APK Factory",
+  "description": "Createur d’applications Android : APK signés (site web, HTML, lanceur AndroidTv)",
   "id": "/",
   "start_url": "./",
   "scope": "./",

@@ -1,7 +1,7 @@
 // Service worker des applis ModProd (modèle modprod-app-template).
 // VERSION est changée par la console quand elle publie de nouvelles icônes : ne pas renommer cette ligne.
 const VERSION = "2026-10-26.24";
-const CACHE = "__APP_ID__-" + VERSION;
+const CACHE = "apk-factory-" + VERSION;
 
 // Fichiers gardés pour le hors ligne. Sur Cloudflare Pages, la page se sert en "./" (pas de .html).
 const CORE = ["./", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png", "icons/apple-180.png"];
@@ -16,7 +16,7 @@ self.addEventListener("install", e => {
 self.addEventListener("activate", e => {
   e.waitUntil(
     caches.keys()
-      .then(keys => Promise.all(keys.filter(k => k.startsWith("__APP_ID__-") && k !== CACHE).map(k => caches.delete(k))))
+      .then(keys => Promise.all(keys.filter(k => k.startsWith("apk-factory-") && k !== CACHE).map(k => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });

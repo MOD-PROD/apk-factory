@@ -1,7 +1,7 @@
 {
   "modprod-assets": 1,
-  "app": "__APP_ID__",
-  "name": "__APP_NAME__",
+  "app": "apk-factory",
+  "name": "APK Factory",
   "updated": "2026-10-26T16:34:01.494Z",
   "items": [
     {

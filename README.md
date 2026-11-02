@@ -1,9 +1,9 @@
-# __APP_NAME__
+# APK Factory
 
-__APP_DESC__
+Createur d’applications Android : APK signés (site web, HTML, lanceur AndroidTv)
 
 Appli ModProd créée à partir du modèle **modprod-app-template**.
-Web : https://__APP_ID__.modprod.app/ · réglages : console https://admin.modprod.app
+Web : https://apk-factory.modprod.app/ · réglages : console https://admin.modprod.app
 
 ## Contenu
 
@@ -33,12 +33,12 @@ Web : https://__APP_ID__.modprod.app/ · réglages : console https://admin.modpr
 
 ## Mise en ligne
 
-Cloudflare Pages relié à ce dépôt : sans build, dossier racine `/`, branche `main`, domaine `__APP_ID__.modprod.app`.
+Cloudflare Pages relié à ce dépôt : sans build, dossier racine `/`, branche `main`, domaine `apk-factory.modprod.app`.
 L'assistant « Nouvelle appli » de la console le fait automatiquement.
 
 ## Repères pour le modèle lui-même
 
-Les marqueurs `__APP_ID__`, `__APP_NAME__` et `__APP_DESC__` sont remplacés à la création de l'appli
+Les marqueurs `apk-factory`, `APK Factory` et `Createur d’applications Android : APK signés (site web, HTML, lanceur AndroidTv)` sont remplacés à la création de l'appli
 (liste des fichiers concernés dans `modprod-template.json`).
 
 
