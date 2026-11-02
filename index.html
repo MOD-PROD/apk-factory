@@ -585,6 +585,160 @@ nav.bottom .ico{font-size:20px;line-height:1}
 })();
 </script>
 <!-- MODPROD-MENU : fin -->
+<!-- MODPROD-TRAVAUX : début (copie de modprod-app-template/modprod-travaux.js, ne pas modifier ici) -->
+<script>
+/* MODPROD-TRAVAUX v1 — page « Site en construction » / « Site en maintenance » des applis ModProd
+   (copie identique dans chaque appli ; original : modprod-app-template/modprod-travaux.js)
+   Réglée dans AppMod → appli → « Construction / maintenance », publiée dans config-site.json → travaux :
+   {
+     "mode": "off" | "construction" | "maintenance",
+     "gauche": "", "droite": "", "bas": ""          ← zones de texte (vides = masquées ; « bas » vide = texte par défaut)
+   }
+   Ancien réglage encore lu : "construction": true (+ "constructionMsg") = mode construction.
+   Utilisation :
+     ModProdTravaux.init({id: "monappli", name: "Mon appli", icon: "icons/icon-192.png",
+                          site: "https://monappli.modprod.app/",   // où lire config-site.json (sinon la page courante)
+                          fetch: true});                            // false = l'appli appelle elle-même ModProdTravaux.apply(config)
+   Jamais bloquant : sans réseau, dernier état connu (cache) ; sans réglage, rien n'est affiché.
+   ?apercu dans l'adresse : voir l'appli quand même (mémorisé jusqu'à la fermeture de l'onglet). */
+(function(){
+  "use strict";
+  if(window.ModProdTravaux) return;
+  var IMG = "https://modprod.app/travaux/";   // images communes (fond + engrenage), dépôt modprod-site
+  var MODES = {
+    construction: {tag: "Site en construction", gear: ["Under", "construction"], def: function(n){ return n + " se prépare. Revenez nous voir très bientôt !"; }},
+    maintenance:  {tag: "Site en maintenance",  gear: ["Under", "maintenance"],  def: function(n){ return n + " est en maintenance. Nous revenons très vite."; }}
+  };
+  var opt = {}, KEY = "", preview = false, box = null, cur = null;
+  var root = document.documentElement;
+
+  function store(k, v){ try{ if(v === undefined) return JSON.parse(localStorage.getItem(KEY + k)); localStorage.setItem(KEY + k, JSON.stringify(v)); }catch(e){ return null; } }
+  function str(v, max){ return typeof v === "string" ? v.slice(0, max || 600) : ""; }
+
+  // Config → état {mode, gauche, droite, bas} (null = rien à afficher)
+  function read(c){
+    if(!c || typeof c !== "object") return null;
+    var t = c.travaux, s;
+    if(t && typeof t === "object") s = {mode: t.mode, gauche: str(t.gauche), droite: str(t.droite), bas: str(t.bas)};
+    else if(typeof t === "string") s = {mode: t, gauche: "", droite: "", bas: ""};
+    else if(c.construction === true) s = {mode: "construction", gauche: "", droite: "", bas: str(c.constructionMsg)};
+    else s = {mode: "off", gauche: "", droite: "", bas: ""};
+    if(!MODES[s.mode]) s.mode = "off";
+    return s;
+  }
+
+  function css(){
+    if(document.getElementById("mpt-css")) return;
+    if(!document.querySelector('link[href*="Chakra+Petch"]')){
+      var f = document.createElement("link"); f.rel = "stylesheet";
+      f.href = "https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@700&display=swap";
+      (document.head || root).appendChild(f);
+    }
+    var st = document.createElement("style"); st.id = "mpt-css";
+    st.textContent =
+      "html.mpt-on,html.mpt-on body{overflow:hidden!important}" +
+      "html.mpt-on body>*:not(#mp-travaux):not(script):not(style){visibility:hidden!important}" +
+      "#mp-travaux{position:fixed;inset:0;z-index:2147483000;overflow:auto;display:flex;flex-direction:column;gap:18px;" +
+        "padding:calc(14px + env(safe-area-inset-top)) 16px calc(18px + env(safe-area-inset-bottom));color:#f4f4f0;" +
+        "font:15px/1.55 'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif;" +
+        "background:linear-gradient(rgba(0,0,0,.30),rgba(0,0,0,.45)),url(" + IMG + "fond.webp) center/cover no-repeat," +
+        "repeating-linear-gradient(-45deg,#1a1a1a 0 26px,#222 26px 52px) #151515}" +
+      "#mp-travaux *{box-sizing:border-box}" +
+      ".mpt-top{display:flex;align-items:center;gap:12px;align-self:flex-start;max-width:100%;padding:8px 18px 8px 8px;border-radius:14px;" +
+        "background:rgba(8,8,8,.78);border:1px solid rgba(255,204,0,.55);box-shadow:0 8px 30px rgba(0,0,0,.55);backdrop-filter:blur(6px)}" +
+      ".mpt-top img{width:46px;height:46px;border-radius:11px;object-fit:contain;flex:none;background:#111}" +
+      ".mpt-top span{font:700 clamp(15px,3.6vw,22px)/1.1 'Chakra Petch','Arial Black',Impact,sans-serif;text-transform:uppercase;letter-spacing:.08em;color:#ffcc00;" +
+        "text-shadow:0 0 14px rgba(255,204,0,.35)}" +
+      ".mpt-mid{flex:1;display:grid;grid-template-columns:1fr;justify-items:center;align-items:center;gap:18px}" +
+      ".mpt-gear{position:relative;container-type:inline-size;width:min(78vw,46vh,440px);aspect-ratio:1;display:grid;place-items:center;filter:drop-shadow(0 18px 40px rgba(0,0,0,.7))}" +
+      ".mpt-gear img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}" +
+      ".mpt-gear::before{content:'';position:absolute;inset:6%;border-radius:50%;background:radial-gradient(circle,#2a2a2a,#0a0a0a 70%);z-index:-1}" +
+      ".mpt-gtxt{position:relative;width:66%;text-align:center;font:800 7.2cqw/1.05 'Chakra Petch','Arial Black',Impact,sans-serif;white-space:nowrap;" +
+        "text-transform:uppercase;letter-spacing:.02em;color:#ffcc00;text-shadow:0 0 18px rgba(255,204,0,.45),0 2px 0 #7a5a00}" +
+      ".mpt-gtxt small{display:block;font-size:.56em;letter-spacing:.22em;color:#f4f4f0;text-shadow:0 0 10px rgba(0,0,0,.8)}" +
+      ".mpt-txt{width:100%;max-width:520px;padding:14px 18px;border-radius:14px;white-space:pre-line;overflow-wrap:anywhere;" +
+        "background:rgba(8,8,8,.80);border:1px solid rgba(255,204,0,.35);border-left:4px solid #ffcc00;box-shadow:0 10px 34px rgba(0,0,0,.55);backdrop-filter:blur(6px)}" +
+      ".mpt-txt[hidden]{display:none!important}" +
+      ".mpt-b{align-self:center;max-width:760px;text-align:center;border-left-width:1px;border-top:4px solid #ffcc00;font-size:16px}" +
+      ".mpt-foot{text-align:center;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.55)}" +
+      ".mpt-foot a{color:inherit}" +
+      "@media (min-width:900px){.mpt-mid{grid-template-columns:1fr auto 1fr;gap:28px}.mpt-mid>*{grid-row:1}.mpt-gear{grid-column:2}.mpt-l{grid-column:1;justify-self:end}.mpt-r{grid-column:3;justify-self:start}" +
+        ".mpt-mid>.mpt-txt{max-width:360px}.mpt-gear{width:min(40vw,58vh,460px)}}" +
+      "@media print{#mp-travaux{display:none}}";
+    (document.head || root).appendChild(st);
+  }
+
+  function el(tag, cls, txt){ var e = document.createElement(tag); if(cls) e.className = cls; if(txt != null) e.textContent = txt; return e; }
+
+  function build(){
+    box = el("div"); box.id = "mp-travaux"; box.setAttribute("role", "alert");
+    var top = el("div", "mpt-top"), ic = el("img"); ic.alt = ""; ic.src = opt.icon || "icons/icon-192.png";
+    ic.onerror = function(){ ic.onerror = null; ic.remove(); };
+    top.append(ic, el("span", "mpt-tag"));
+    var mid = el("div", "mpt-mid"), gear = el("div", "mpt-gear"), gi = el("img"); gi.alt = ""; gi.src = IMG + "engrenage.webp";
+    gi.onerror = function(){ gi.onerror = null; gi.remove(); };
+    var gt = el("div", "mpt-gtxt");
+    gear.append(gi, gt);
+    mid.append(gear, el("div", "mpt-txt mpt-l"), el("div", "mpt-txt mpt-r"));
+    var foot = el("p", "mpt-foot"), a = el("a", "", "ModProd"); a.href = "https://modprod.app"; a.target = "_blank"; a.rel = "noopener";
+    foot.append(document.createTextNode("© " + (opt.name || "") + " · "), a);
+    box.append(top, mid, el("div", "mpt-txt mpt-b"), foot);
+    document.body.appendChild(box);
+  }
+
+  function paint(){
+    var on = !!(cur && MODES[cur.mode]) && !preview;
+    root.classList.toggle("mpt-on", on);
+    if(!on){ if(box){ box.remove(); box = null; } return; }
+    if(!document.body){ document.addEventListener("DOMContentLoaded", paint, {once: true}); return; }
+    css();
+    if(!box || !box.isConnected) build();
+    var m = MODES[cur.mode], q = function(s){ return box.querySelector(s); };
+    q(".mpt-tag").textContent = m.tag;
+    var g = q(".mpt-gtxt"); g.textContent = ""; g.append(el("small", "", m.gear[0]), document.createTextNode(m.gear[1]));
+    [["mpt-l", cur.gauche], ["mpt-r", cur.droite], ["mpt-b", cur.bas || m.def(opt.name || "Cette appli")]].forEach(function(z){
+      var n = q("." + z[0]), t = String(z[1] || "").trim(); n.textContent = t; n.hidden = !t;
+    });
+    box.setAttribute("aria-label", m.tag);
+  }
+
+  function apply(c){
+    var s = read(c); if(!s) return;
+    cur = s; store("travaux", s); paint();
+  }
+
+  function load(){
+    var base = opt.site || location.href, url;
+    try{ url = new URL("config-site.json", base).href; }catch(e){ return; }
+    fetch(url, {cache: "no-store"}).then(function(r){ return r.ok ? r.json() : null; }).then(function(c){ if(c) apply(c); }).catch(function(){});
+  }
+
+  window.ModProdTravaux = {
+    init: function(o){
+      opt = o || {}; KEY = "mp:" + (opt.id || location.hostname) + ":";
+      try{
+        if(/[?&]apercu\b/.test(location.search)) sessionStorage.setItem(KEY + "apercu", "1");
+        preview = sessionStorage.getItem(KEY + "apercu") === "1";
+      }catch(e){ preview = /[?&]apercu\b/.test(location.search); }
+      css();
+      cur = store("travaux") || null;          // dernier état connu : affiché tout de suite (pas d'éclair de l'appli)
+      if(cur && !MODES[cur.mode]) cur = null;
+      paint();
+      if(opt.fetch !== false){
+        load();
+        document.addEventListener("visibilitychange", function(){ if(document.visibilityState === "visible") load(); });
+        addEventListener("online", load);
+      }
+      return this;
+    },
+    apply: apply,
+    state: function(){ return cur ? JSON.parse(JSON.stringify(cur)) : null; },
+    preview: function(){ return preview; }
+  };
+})();
+</script>
+<!-- MODPROD-TRAVAUX : fin -->
+<script>ModProdTravaux.init({id: "apk-factory", name: "APK Factory", icon: "icons/icon-192.png", site: "https://apk-factory.modprod.app/"});</script>
 </head>
 <body>
 
