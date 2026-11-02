@@ -3,5 +3,44 @@
   "beta": true,
   "installBanner": true,
   "announce": "",
-  "tiers": {}
+  "tiers": {
+    "free": {
+      "f": {
+        "exemple": "on"
+      }
+    },
+    "guest": {
+      "f": {
+        "exemple": "on"
+      }
+    },
+    "pro": {
+      "f": {
+        "exemple": "on"
+      }
+    }
+  },
+  "header": {
+    "layout": [
+      {
+        "k": "e1",
+        "type": "icon",
+        "pos": "left",
+        "size": "m"
+      },
+      {
+        "k": "e2",
+        "type": "title",
+        "pos": "left",
+        "size": "m"
+      }
+    ]
+  },
+  "travaux": {
+    "mode": "construction",
+    "gauche": "",
+    "droite": "",
+    "bas": ""
+  },
+  "updated": "2026-11-02T17:47:25.831Z"
 }
