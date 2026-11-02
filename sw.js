@@ -1,6 +1,6 @@
 // Service worker des applis ModProd (modèle modprod-app-template).
 // VERSION est changée par la console quand elle publie de nouvelles icônes : ne pas renommer cette ligne.
-const VERSION = "2026-10-26.24";
+const VERSION = "2026-11-02.1";
 const CACHE = "apk-factory-" + VERSION;
 
 // Fichiers gardés pour le hors ligne. Sur Cloudflare Pages, la page se sert en "./" (pas de .html).
