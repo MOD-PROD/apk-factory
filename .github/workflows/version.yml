@@ -1,0 +1,58 @@
+# Fonction commune ModProd « Version automatique » (registre AppMod : version). Copie identique dans chaque dépôt,
+# seule la ligne MAJEUR change. Original : MOD-PROD/modprod-app-template/.github/workflows/version.yml
+#
+# +1 à chaque commit qui modifie le CODE. Les publications d'AppMod (messages « Publié depuis AppMod ») et les
+# commits de ce robot ne comptent pas. Version = <MAJEUR>.<build>, écrite dans :
+#   - version.json (lu par AppMod pour la Fiche)
+#   - index.html, si la page a un objet « const APP = { … version: "…" } » (affichée dans l'appli)
+# Le commit du robot ne relance pas cette action (jeton GITHUB_TOKEN).
+name: Version automatique
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+concurrency:
+  group: version
+  cancel-in-progress: false
+env:
+  MAJEUR: "1"
+jobs:
+  version:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Calcul et écriture de la version
+        run: |
+          git pull --ff-only origin main || true
+          code_commits() { git log --invert-grep --grep='Publié depuis AppMod' --format='%an' "$@" | grep -vc '^github-actions\[bot\]$' || true; }
+          BUILD=$(sed -n 's/.*"build": *\([0-9]*\).*/\1/p' version.json 2>/dev/null | head -1)
+          LAST=$(sed -n 's/.*"commit": *"\([0-9a-f]*\)".*/\1/p' version.json 2>/dev/null | head -1)
+          if [ -n "$BUILD" ] && [ -n "$LAST" ] && git cat-file -e "$LAST^{commit}" 2>/dev/null; then ADD=$(code_commits "$LAST..HEAD"); N=$((BUILD + ADD));
+          elif [ -n "$BUILD" ]; then ADD=$(code_commits HEAD~1..HEAD); N=$((BUILD + ADD));
+          else ADD=$(code_commits); N=$ADD; fi
+          [ "$ADD" -gt 0 ] || { echo "Aucun changement de code : version inchangée"; exit 0; }
+          V="${MAJEUR}.${N}"
+          SHA=$(git log -1 --invert-grep --grep='Publié depuis AppMod' --format='%H' --perl-regexp --author='^(?!github-actions\[bot\]).*$')
+          DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          [ -f index.html ] && python3 - "$V" <<'PY'
+          import re, sys
+          v = sys.argv[1]; s = open("index.html", encoding="utf-8").read()
+          s2 = re.sub(r'(const APP = \{[^}]*?version:\s*")[^"]*(")', lambda m: m.group(1) + v + m.group(2), s, count=1, flags=re.S)
+          if s2 != s: open("index.html", "w", encoding="utf-8").write(s2)
+          PY
+          printf '{\n  "modprod-version": 1,\n  "version": "%s",\n  "build": %s,\n  "commit": "%s",\n  "date": "%s"\n}\n' "$V" "$N" "$SHA" "$DATE" > version.json
+          echo "V=$V" >> "$GITHUB_ENV"
+      - name: Commit
+        run: |
+          [ -n "$V" ] || exit 0
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A index.html version.json 2>/dev/null || git add version.json
+          git diff --cached --quiet && exit 0
+          git commit -m "Version ${V}"
+          for i in 1 2 3; do git push origin HEAD:main && exit 0; git pull --rebase origin main; done
+          exit 1

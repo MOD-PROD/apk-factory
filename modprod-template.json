@@ -1,0 +1,47 @@
+{
+  "modprod-template": 1,
+  "placeholders": {
+    "__APP_ID__": "identifiant de l'appli (minuscules, chiffres, tirets) — aussi le sous-domaine <id>.modprod.app",
+    "__APP_NAME__": "nom affiché",
+    "__APP_DESC__": "description courte (80 caractères au plus)"
+  },
+  "files": [
+    "index.html",
+    "sw.js",
+    "manifest.webmanifest",
+    "README.md",
+    "assets/assets.json"
+  ],
+  "config": "config-site.json",
+  "bundles": [
+    {
+      "id": "icon",
+      "title": "Icône de l'appli",
+      "files": [
+        {
+          "path": "icons/icon-512.png",
+          "size": 512,
+          "label": "Icône 512"
+        },
+        {
+          "path": "icons/icon-192.png",
+          "size": 192,
+          "label": "Icône 192"
+        },
+        {
+          "path": "icons/apple-180.png",
+          "size": 180,
+          "kind": "opaque",
+          "label": "Apple 180"
+        },
+        {
+          "path": "icons/maskable-512.png",
+          "size": 512,
+          "kind": "maskable",
+          "label": "Android maskable"
+        }
+      ],
+      "swVersion": "sw.js"
+    }
+  ]
+}
