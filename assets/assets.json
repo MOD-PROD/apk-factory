@@ -2,15 +2,15 @@
   "modprod-assets": 1,
   "app": "apk-factory",
   "name": "APK Factory",
-  "updated": "2026-10-26T16:34:01.494Z",
+  "updated": "2026-11-03T02:02:45.860Z",
   "items": [
     {
       "id": "icone-512",
       "name": "Icône 512",
       "type": "image",
+      "use": "Icône de l'appli (installation, manifest)",
       "file": "icons/icon-512.png",
       "mime": "image/png",
-      "use": "Icône de l'appli (installation, manifest)",
       "w": 512,
       "h": 512
     },
@@ -18,9 +18,9 @@
       "id": "icone-192",
       "name": "Icône 192",
       "type": "image",
+      "use": "Icône de l'appli (onglet, entête, annuaire ModProd)",
       "file": "icons/icon-192.png",
       "mime": "image/png",
-      "use": "Icône de l'appli (onglet, entête, annuaire ModProd)",
       "w": 192,
       "h": 192
     },
@@ -28,9 +28,9 @@
       "id": "icone-apple-180",
       "name": "Icône Apple 180",
       "type": "image",
+      "use": "Écran d'accueil iPhone / iPad",
       "file": "icons/apple-180.png",
       "mime": "image/png",
-      "use": "Écran d'accueil iPhone / iPad",
       "w": 180,
       "h": 180
     },
@@ -38,9 +38,9 @@
       "id": "icone-android-adaptative",
       "name": "Icône Android adaptative",
       "type": "image",
+      "use": "Icône Android (maskable)",
       "file": "icons/maskable-512.png",
       "mime": "image/png",
-      "use": "Icône Android (maskable)",
       "w": 512,
       "h": 512
     },
@@ -48,38 +48,38 @@
       "id": "btn-accueil",
       "name": "Bouton Accueil",
       "type": "icon",
+      "tags": [
+        "bouton"
+      ],
+      "use": "Bouton « Accueil » du menu",
       "file": "assets/btn-accueil.2dc3495f.svg",
       "mime": "image/svg+xml",
       "w": 96,
-      "h": 96,
-      "use": "Bouton « Accueil » du menu",
-      "tags": [
-        "bouton"
-      ]
+      "h": 96
     },
     {
       "id": "btn-applis",
       "name": "Bouton Applis",
       "type": "icon",
+      "tags": [
+        "bouton"
+      ],
+      "use": "Bouton « Applis » du menu",
       "file": "assets/btn-applis.e1727b37.svg",
       "mime": "image/svg+xml",
       "w": 96,
-      "h": 96,
-      "use": "Bouton « Applis » du menu",
-      "tags": [
-        "bouton"
-      ]
+      "h": 96
     },
     {
       "id": "couleurs",
       "name": "Couleurs de l'appli",
       "type": "palette",
+      "use": "Couleurs de l'interface",
       "colors": {
         "fond": "#141a21",
         "accent": "#f08a24",
         "texte": "#e6ebf0"
-      },
-      "use": "Couleurs de l'interface"
+      }
     }
   ]
 }
