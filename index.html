@@ -115,6 +115,7 @@ nav.bottom .ico{font-size:20px;line-height:1}
    Anciens réglages encore lus : "on", "show" (all · pc · mobile) et "text" (true / false), utilisés si pc / mobile manquent.
    items vide = boutons de l'appli (contenu par défaut). Élément : {"t":"btn","id":"settings","label":"","icon":"","color":""}
    ou {"t":"link","url":"https://…","label":"Site","icon":"globe","color":"","tab":true}.
+   "glyph" (facultatif, bouton ou lien) : icône de la bibliothèque Asset Library {"family","code","font"} ; une action peut aussi avoir glyph.
    Les 3 menus peuvent être affichés ensemble ou séparément, avec un réglage propre au PC et au smartphone.
    Pages de l'appli ouvertes en fenêtre plein écran (<dialog> modal) : les menus s'y affichent aussi (option pages / page / closePage).
    Règle d'or : sans réglage (ou si aucun menu n'est visible sur l'écran), l'appli garde son menu d'origine.
@@ -198,6 +199,17 @@ nav.bottom .ico{font-size:20px;line-height:1}
   var opt = null, cfg = null, hcfg = null, hdr = null, menuIds = [], built = [], mq = window.matchMedia ? matchMedia("(min-width: 900px)") : null, timer = null, ASSETS = {};
   var esc = function(t){ return String(t == null ? "" : t).replace(/[&<>"]/g, function(x){ return {"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[x]; }); };
   var hex = function(c){ return typeof c === "string" && HEX.test(c.trim()) ? c.trim() : ""; };
+  // Icônes de la bibliothèque commune Asset Library (polices d'icônes) : {"family", "code", "font": "fonts/….ttf"}
+  var LIB = "https://asset-library.modprod.app/", FACES = {};
+  var okGlyph = function(g){ return !!(g && /^[A-Za-z0-9_-]{1,40}$/.test(g.family || "") && /^[0-9a-f]{2,6}$/i.test(g.code || "") && /^fonts\/[A-Za-z0-9._-]{1,80}\.ttf$/.test(g.font || "")); };
+  function glyphHtml(g){
+    if(!FACES[g.family]){
+      FACES[g.family] = 1; var st = document.getElementById("mpm-faces");
+      if(!st){ st = document.createElement("style"); st.id = "mpm-faces"; (document.head || document.documentElement).appendChild(st); }
+      st.textContent += '@font-face{font-family:"mpg-' + g.family + '";src:url("' + LIB + g.font + '") format("truetype");font-display:block}';
+    }
+    return '<i class="mpm-gl" aria-hidden="true" style="font-family:\'mpg-' + g.family + '\'">' + String.fromCodePoint(parseInt(g.code, 16)) + "</i>";
+  }
   var okUrl = function(u){ return /^(https:\/\/[^\s"<>]+|mailto:[^\s"<>]+)$/i.test(String(u || "")); };
   var el = function(s){ return typeof s === "string" ? document.querySelector(s) : s || null; };
   var isPc = function(){ return mq ? mq.matches : true; };
@@ -238,7 +250,8 @@ nav.bottom .ico{font-size:20px;line-height:1}
       ".mpm-ai{display:inline-block;flex:none;width:var(--mpm-s,1.25em);height:var(--mpm-s,1.25em);background:currentColor;-webkit-mask:var(--u) center/contain no-repeat;mask:var(--u) center/contain no-repeat}" +
       "img.mpm-ai{background:none;-webkit-mask:none;mask:none;object-fit:contain}" +
       ".mpm.notext .mpm-b span:not(.mpm-ai){display:none}.mpm-bottom.notext .mpm-b{padding:10px 2px}" +
-      ".mpm.noicon .mpm-b>svg,.mpm.noicon .mpm-b>.mpm-ai{display:none}.mpm-bottom.noicon .mpm-b{padding:12px 2px;font-size:12px}" +
+      ".mpm-gl{display:inline-block;flex:none;font-style:normal;font-weight:400;font-size:var(--mpm-s,1.25em);line-height:1;width:var(--mpm-s,1.25em);text-align:center}" +
+      ".mpm.noicon .mpm-b>svg,.mpm.noicon .mpm-b>.mpm-ai,.mpm.noicon .mpm-b>.mpm-gl{display:none}.mpm-bottom.noicon .mpm-b{padding:12px 2px;font-size:12px}" +
       ".mpm-top.inpage{position:fixed;top:0;left:0;right:0;z-index:5;padding:6px max(10px,env(safe-area-inset-left));padding-top:calc(6px + env(safe-area-inset-top));background:var(--mpm-bg);border-bottom:1px solid rgba(255,255,255,.08)}" +
       "dialog.mpm-pg{padding-bottom:calc(64px + env(safe-area-inset-bottom))}dialog.mpm-pgt{padding-top:var(--mpm-th,52px)}" +
       "dialog .mpm-bottom,dialog .mpm-side,dialog .mpm-burger.float{position:fixed}dialog .mpm-scrim{position:fixed}" +
@@ -294,6 +307,7 @@ nav.bottom .ico{font-size:20px;line-height:1}
       (Array.isArray(x.items) ? x.items : []).slice(0, 12).forEach(function(it){
         if(!it || typeof it !== "object") return;
         var b = {t: it.t === "link" ? "link" : "btn", label: String(it.label || "").replace(/[<>]/g, "").slice(0, 30), icon: ICONS[it.icon] ? it.icon : "", color: hex(it.color)};
+        if(okGlyph(it.glyph)) b.glyph = {family: it.glyph.family, code: it.glyph.code, font: it.glyph.font};
         if(b.t === "link"){ if(!okUrl(it.url)) return; b.url = String(it.url); b.tab = it.tab !== false; }
         else { if(!/^[a-z0-9_-]{1,30}$/i.test(it.id || "")) return; b.id = it.id; }
         o[k].items.push(b);
@@ -320,8 +334,10 @@ nav.bottom .ico{font-size:20px;line-height:1}
     return x.svg ? '<span class="mpm-ai" aria-hidden="true" style="--u:url(\'' + u + '\')' + (style || "") + '"></span>' : '<img class="mpm-ai" alt="" src="' + esc(x.url) + '"' + (style ? ' style="' + style.replace(/^;/, "") + '"' : "") + ">";
   }
   function iconFor(it, a){
+    if(it.glyph && okGlyph(it.glyph)) return glyphHtml(it.glyph);
     if(it.icon && ICONS[it.icon]) return svg(ICONS[it.icon]);
     if(a && !a.live && ASSETS["btn-" + a.id]) return assetHtml(ASSETS["btn-" + a.id]);
+    if(a && a.glyph && okGlyph(a.glyph)) return glyphHtml(a.glyph);
     if(a && a.icon && ICONS[a.icon]) return svg(ICONS[a.icon]);
     if(a && a.el){ var n = el(a.el), s = n && n.querySelector("svg"); if(s) return s.outerHTML; }
     return svg(it.t === "link" ? ICONS.link : ICONS.star);
@@ -377,7 +393,7 @@ nav.bottom .ico{font-size:20px;line-height:1}
     }
     n.className = "mpm-b"; n.title = label; n.setAttribute("aria-label", label);
     if(it.color) n.style.setProperty("--mc", it.color);
-    n.innerHTML = iconFor(it, a) + "<span>" + esc(label) + "</span>"; n.mpmIcon = !!(it.icon && ICONS[it.icon]);
+    n.innerHTML = iconFor(it, a) + "<span>" + esc(label) + "</span>"; n.mpmIcon = !!(it.icon && ICONS[it.icon]) || !!it.glyph;
     if(it.t === "link") n.addEventListener("click", close);
     return n;
   }
