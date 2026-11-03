@@ -140,7 +140,8 @@ nav.bottom .ico{font-size:20px;line-height:1}
      Action : page:"#list" = la page (dialog) qu'ouvre ce bouton ; un bouton du menu ferme les autres pages ouvertes.
      ModProdMenu.apply(nouveauxReglages) pour réappliquer (ex. après lecture de la config en ligne).
    En-tête réglable (config-site.json → header.layout, écran « En-tête » d'AppMod) : liste d'éléments
-     {"k": "e1", "type": "icon" | "title" | "subtitle" | "tag" | "version" | "button", "id": "<bouton de l'appli>" (button),
+     {"k": "e1", "type": "icon" | "title" | "subtitle" | "tag" | "version" | "button" | "text", "id": "<bouton de l'appli>" (button),
+      "text": "…" et "color" (text : texte libre ou repris de la fiche, plusieurs possibles),
       "pos": "left" | "center" | "right" | "above" | "below", "ref": "<k d'un autre élément>" (above / below),
       "size": nombre en px (taille de l'icône / du bouton, hauteur d'une image, taille du texte) ou "s" | "m" | "l" (ancien réglage, encore lu)}
      Les éléments de l'appli (opt.header.parts) sont déplacés dans l'en-tête réglé ; les boutons viennent de opt.actions.
@@ -236,6 +237,7 @@ nav.bottom .ico{font-size:20px;line-height:1}
       ".mph{--mpm-s:20px;display:flex;align-items:center;gap:8px;flex:1 1 auto;min-width:0}.mph-z{display:flex;align-items:center;gap:8px;min-width:0}" +
       ".mph-l{flex:1 1 0;justify-content:flex-start}.mph-c{flex:0 1 auto;justify-content:center}.mph-r{flex:1 1 0;justify-content:flex-end}" +
       ".mph-s{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-width:0}.mph-s:has(>.mph-btn:only-child){flex:none}.mph-c .mph-s{align-items:center;text-align:center}.mph-r .mph-s{align-items:flex-end;text-align:right}" +
+      ".mph-txt{font-weight:600;font-size:15px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;max-width:100%}" +
       ".mph [data-mph=title]{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;max-width:100%}.mph-hide{display:none!important}.mph-btn{border:1px solid rgba(255,255,255,.12);background:var(--mpm-bg);padding:0;width:38px;height:38px;flex:none}.mph-btn span:not(.mpm-ai){display:none}" +
       ".mph-btn.mph-sz-s{width:30px;height:30px;--mpm-s:16px}.mph-btn.mph-sz-l{width:46px;height:46px;--mpm-s:24px}" +
       "img[data-mph].mph-sz-s{width:24px!important;height:24px!important}img[data-mph].mph-sz-m{width:34px!important;height:34px!important}img[data-mph].mph-sz-l{width:46px!important;height:46px!important}" +
@@ -261,9 +263,9 @@ nav.bottom .ico{font-size:20px;line-height:1}
     document.head.appendChild(s);
   }
   // Nettoyage côté appli (même règles que le serveur AppMod) : un réglage invalide est ignoré
-  var HTYPES = ["icon", "title", "subtitle", "tag", "version", "button"], HPOS = ["left", "center", "right", "above", "below"];
+  var HTYPES = ["icon", "title", "subtitle", "tag", "version", "button", "text"], HPOS = ["left", "center", "right", "above", "below"];
   // Tailles de l'en-tête en px : [S, M, L, min, max] par type d'élément (S/M/L = anciens réglages)
-  var HSZ = {icon: [24, 34, 46, 16, 96], button: [30, 38, 46, 24, 72], title: [15, 20, 27, 10, 48], subtitle: [11, 13, 14, 8, 32], tag: [9, 11, 13, 7, 24], version: [10, 11, 13, 7, 24]};
+  var HSZ = {text: [12, 15, 20, 8, 48], icon: [24, 34, 46, 16, 96], button: [30, 38, 46, 24, 72], title: [15, 20, 27, 10, 48], subtitle: [11, 13, 14, 8, 32], tag: [9, 11, 13, 7, 24], version: [10, 11, 13, 7, 24]};
   function hsize(t, v){
     var r = HSZ[t] || HSZ.title, n = typeof v === "number" ? v : typeof v === "string" && /^\d+(\.\d+)?$/.test(v) ? +v : NaN;
     if(isFinite(n)) return Math.round(Math.max(r[3], Math.min(r[4], n)));
@@ -294,6 +296,7 @@ nav.bottom .ico{font-size:20px;line-height:1}
       var k = /^[a-z0-9_-]{1,20}$/i.test(e.k || "") && !seen[e.k] ? e.k : "e" + i; seen[k] = 1;
       var o = {k: k, type: e.type, pos: HPOS.indexOf(e.pos) >= 0 ? e.pos : "left", ref: String(e.ref || ""), size: hsize(e.type, e.size)};
       if(e.type === "button"){ if(!/^[a-z0-9_-]{1,30}$/i.test(e.id || "")) return; o.id = e.id; }
+      if(e.type === "text"){ o.text = String(e.text || "").replace(/[<>]/g, "").slice(0, 160); if(!o.text.trim()) return; o.color = hex(e.color); }   // texte libre (ou repris de la fiche par AppMod)
       out.push(o);
     });
     return out.length ? out : null;
@@ -434,6 +437,7 @@ nav.bottom .ico{font-size:20px;line-height:1}
     hdr = {box: box, moved: [], hidden: [], styled: []};
     var stack = {}, used = {};
     var nodeOf = function(e){
+      if(e.type === "text"){ var t = document.createElement("span"); t.className = "mph-txt"; t.setAttribute("data-mph", "text"); t.textContent = e.text; if(e.color) t.style.color = e.color; return t; }
       if(e.type === "button"){ var a = actionOf(e.id); if(!a) return null; var b = button({t: "btn", id: e.id, label: "", icon: "", color: ""}, "header"); b.classList.add("mph-btn"); return b; }
       if(used[e.type]) return null;
       var n = el(P[e.type]); if(!n) return null; used[e.type] = 1;
