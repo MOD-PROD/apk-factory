@@ -1,0 +1,211 @@
+name: Fabriquer une appli
+
+# Fabrique un APK signé avec la clé ModProd, à partir des bases et des patches
+# de MOD-PROD/modprod-apk-creator, avec Morphe CLI.
+#   site-web → apk-base.apk + « ModProd App » (adresse web) + « ModProd Réglages »
+#   html     → apk-base.apk + « ModProd App » (page .html ou .zip) + « ModProd Réglages »
+#   atv      → atv-base.apk + « ATV Launcher »
+# Phase 1 : lancement à la main (Actions → Fabriquer une appli → Run workflow),
+# l'APK est donné en artefact du run (7 jours).
+#
+# Secrets : ANDROID_KEYSTORE_B64 (.p12 en base64), ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS.
+
+on:
+  workflow_dispatch:
+    inputs:
+      type:
+        description: "Type d'appli"
+        type: choice
+        options: [site-web, html, atv]
+        default: site-web
+      app_name:
+        description: "Nom de l'appli"
+        required: true
+      package_name:
+        description: "Nom de package (ex. app.modprod.monappli)"
+        required: true
+      version_name:
+        description: "Version (nom)"
+        default: "1.0.0"
+      version_code:
+        description: "Version (code) : +1 à chaque mise à jour"
+        default: "1"
+      web_url:
+        description: "site-web : adresse https://"
+        default: ""
+      html_url:
+        description: "html : lien https:// vers la page .html ou une archive .zip"
+        default: ""
+      config_url:
+        description: "html : lien https:// vers config.js (facultatif)"
+        default: ""
+      icon_url:
+        description: "Icône PNG carrée, lien https:// (facultatif ; site-web : vide = icône du site)"
+        default: ""
+      reglages:
+        description: 'site-web / html : réglages en JSON (facultatif), ex. {"fullscreen":true,"barsColor":"#FAFAFA"}'
+        default: ""
+      atv_mode:
+        description: "atv : action au lancement"
+        type: choice
+        options: [url, apk, apkToUrl]
+        default: url
+      atv_target_url:
+        description: "atv : lien cible (https:// ou intent://)"
+        default: ""
+      atv_target_apk:
+        description: "atv : package de l'appli cible (ex. com.google.android.youtube.tv)"
+        default: ""
+      banner_url:
+        description: "atv : bannière PNG 320 × 180, lien https:// (facultatif)"
+        default: ""
+      atv_is_game:
+        description: "atv : ranger dans « Jeux »"
+        type: boolean
+        default: false
+      job_id:
+        description: "Identifiant de tâche (rempli par le site en phase 2)"
+        default: ""
+
+run-name: "${{ inputs.type }} · ${{ inputs.app_name }} (${{ inputs.package_name }})"
+
+permissions:
+  contents: read
+
+env:
+  MORPHE_VERSION: '2.0.0-dev.4'
+  PATCHES_REPO: 'MOD-PROD/modprod-apk-creator'
+  JAVA_TOOL_OPTIONS: '-Dfile.encoding=UTF-8 -Dstdout.encoding=UTF-8 -Dstderr.encoding=UTF-8'
+
+jobs:
+  build:
+    name: Fabriquer l'APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Télécharger Morphe CLI, les patches et les bases
+        run: |
+          mkdir -p tools
+          curl -fsSL -o tools/morphe.jar \
+            "https://github.com/MorpheApp/morphe-desktop/releases/download/v${MORPHE_VERSION}/morphe-desktop-${MORPHE_VERSION}-all.jar"
+          MPP_URL=$(curl -fsSL "https://raw.githubusercontent.com/${PATCHES_REPO}/main/patches-bundle.json" \
+            | python3 -c 'import json,sys; print(json.load(sys.stdin)["download_url"])')
+          echo "Patches : $MPP_URL"
+          curl -fsSL -o tools/patches.mpp "$MPP_URL"
+          for b in apk-base.apk atv-base.apk; do
+            curl -fsSL -o "tools/$b" "https://github.com/${PATCHES_REPO}/releases/download/base-apk/$b"
+          done
+          java -jar tools/morphe.jar options-create -p tools/patches.mpp -o tools/options-template.json
+          echo "MPP_URL=$MPP_URL" >> "$GITHUB_ENV"
+
+      - name: Vérifier les réglages et préparer les fichiers
+        id: prep
+        env:
+          WORK_DIR: work
+          OPTIONS_TEMPLATE: tools/options-template.json
+          IN_TYPE: ${{ inputs.type }}
+          IN_APP_NAME: ${{ inputs.app_name }}
+          IN_PACKAGE: ${{ inputs.package_name }}
+          IN_VERSION_NAME: ${{ inputs.version_name }}
+          IN_VERSION_CODE: ${{ inputs.version_code }}
+          IN_WEB_URL: ${{ inputs.web_url }}
+          IN_HTML_URL: ${{ inputs.html_url }}
+          IN_CONFIG_URL: ${{ inputs.config_url }}
+          IN_ICON_URL: ${{ inputs.icon_url }}
+          IN_REGLAGES: ${{ inputs.reglages }}
+          IN_ATV_MODE: ${{ inputs.atv_mode }}
+          IN_ATV_TARGET_URL: ${{ inputs.atv_target_url }}
+          IN_ATV_TARGET_APK: ${{ inputs.atv_target_apk }}
+          IN_BANNER_URL: ${{ inputs.banner_url }}
+          IN_ATV_IS_GAME: ${{ inputs.atv_is_game }}
+        run: python3 -I .github/scripts/build_app.py
+
+      - name: Patcher avec Morphe CLI
+        run: |
+          java -jar tools/morphe.jar patch \
+            -p tools/patches.mpp \
+            --options-file "${{ steps.prep.outputs.options }}" \
+            --unsigned \
+            -r work/result.json \
+            -o work/unsigned.apk \
+            "tools/${{ steps.prep.outputs.base }}"
+          python3 - <<'EOF'
+          import json, sys
+          r = json.load(open("work/result.json", encoding="utf-8"))
+          print(json.dumps(r, ensure_ascii=False, indent=2)[:4000])
+          if not r.get("success"):
+              print("::error::Morphe : le patch a échoué (voir le résultat ci-dessus).")
+              sys.exit(1)
+          EOF
+
+      - name: Signer avec la clé ModProd
+        env:
+          KS_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+          KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KS_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          APK_NAME: ${{ steps.prep.outputs.apk_name }}
+        run: |
+          if [ -z "$KS_B64" ] || [ -z "$KS_PASS" ] || [ -z "$KS_ALIAS" ]; then
+            echo "::error::Secrets de signature manquants (ANDROID_KEYSTORE_B64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS)."
+            exit 1
+          fi
+          KS="$RUNNER_TEMP/modprod-release.p12"
+          echo "$KS_B64" | tr -d ' \r\n' | base64 -d > "$KS"
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          "$BT/zipalign" -p -f 4 work/unsigned.apk work/aligned.apk
+          mkdir -p out
+          "$BT/apksigner" sign --ks "$KS" --ks-type PKCS12 --ks-key-alias "$KS_ALIAS" \
+            --ks-pass env:KS_PASS --key-pass env:KS_PASS \
+            --out "out/$APK_NAME" work/aligned.apk
+          rm -f "$KS"
+          echo "BT=$BT" >> "$GITHUB_ENV"
+
+      - name: Vérifier l'APK
+        env:
+          APK_NAME: ${{ steps.prep.outputs.apk_name }}
+          PKG: ${{ steps.prep.outputs.package }}
+          IN_APP_NAME: ${{ inputs.app_name }}
+          IN_TYPE: ${{ inputs.type }}
+        run: |
+          APK="out/$APK_NAME"
+          "$BT/apksigner" verify --print-certs "$APK" | tee work/certs.txt
+          "$BT/aapt2" dump badging "$APK" > work/badging.txt
+          head -5 work/badging.txt
+          grep -q "package: name='$PKG'" work/badging.txt || { echo "::error::Nom de package inattendu dans l'APK."; exit 1; }
+          {
+            echo "## ✅ $IN_APP_NAME"
+            echo
+            echo "| | |"
+            echo "|---|---|"
+            echo "| Type | \`$IN_TYPE\` |"
+            echo "| Package | \`$PKG\` |"
+            echo "| Version | $(grep -o "versionName='[^']*'" work/badging.txt | cut -d"'" -f2) ($(grep -o "versionCode='[^']*'" work/badging.txt | cut -d"'" -f2)) |"
+            echo "| Fichier | \`$APK_NAME\` ($(du -h "$APK" | cut -f1)) |"
+            echo "| Patches | $(basename "$MPP_URL") · Morphe $MORPHE_VERSION |"
+            echo "| Certificat SHA-256 | \`$(grep -m1 'SHA-256' work/certs.txt | awk '{print $NF}')\` |"
+            echo
+            echo "L'APK est dans **Artifacts**, en bas de cette page (gardé 7 jours)."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Artefact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.prep.outputs.apk_name }}
+          path: out/${{ steps.prep.outputs.apk_name }}
+          retention-days: 7
+          if-no-files-found: error
+
+      - name: Nettoyer la clé
+        if: always()
+        run: rm -f "$RUNNER_TEMP/modprod-release.p12"
