@@ -221,7 +221,7 @@ nav.bottom .ico{font-size:20px;line-height:1}
       ".mpm-scrim{position:fixed;inset:0;background:rgba(10,15,20,.55);z-index:69}.mpm-scrim[hidden]{display:none}" +
       ".mph{--mpm-s:20px;display:flex;align-items:center;gap:8px;flex:1 1 auto;min-width:0}.mph-z{display:flex;align-items:center;gap:8px;min-width:0}" +
       ".mph-l{flex:1 1 0;justify-content:flex-start}.mph-c{flex:0 1 auto;justify-content:center}.mph-r{flex:1 1 0;justify-content:flex-end}" +
-      ".mph-s{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-width:0}.mph-c .mph-s{align-items:center;text-align:center}.mph-r .mph-s{align-items:flex-end;text-align:right}" +
+      ".mph-s{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-width:0}.mph-s:has(>.mph-btn:only-child){flex:none}.mph-c .mph-s{align-items:center;text-align:center}.mph-r .mph-s{align-items:flex-end;text-align:right}" +
       ".mph [data-mph=title]{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;max-width:100%}.mph-hide{display:none!important}.mph-btn{border:1px solid rgba(255,255,255,.12);background:var(--mpm-bg);padding:0;width:38px;height:38px;flex:none}.mph-btn span:not(.mpm-ai){display:none}" +
       ".mph-btn.mph-sz-s{width:30px;height:30px;--mpm-s:16px}.mph-btn.mph-sz-l{width:46px;height:46px;--mpm-s:24px}" +
       "img[data-mph].mph-sz-s{width:24px!important;height:24px!important}img[data-mph].mph-sz-m{width:34px!important;height:34px!important}img[data-mph].mph-sz-l{width:46px!important;height:46px!important}" +
@@ -257,8 +257,16 @@ nav.bottom .ico{font-size:20px;line-height:1}
   // Taille en px : posée en style (gardé pour être retiré si l'en-tête est réglé autrement)
   function hpx(n, t, px){
     var st = n.style, imp = "important";
-    if(t === "button"){ st.setProperty("width", px + "px", imp); st.setProperty("height", px + "px", imp); st.setProperty("--mpm-s", Math.round(px * .52) + "px"); }
-    else if(n.tagName === "IMG" && t === "icon"){ st.setProperty("height", px + "px", imp); st.setProperty("width", px + "px", imp); st.setProperty("max-width", "none", imp); st.setProperty("flex", "none", imp); }
+    if(t === "icon" && n.tagName !== "IMG"){   // icône dans un conteneur (ex. lien) : le conteneur suit la hauteur et la forme de l'image
+      var im = n.querySelector("img");
+      st.setProperty("height", px + "px", imp); st.setProperty("width", im ? "auto" : px + "px", imp); st.setProperty("max-width", "100%", imp); st.setProperty("min-width", Math.min(px, 34) + "px", imp); st.setProperty("flex", "0 1 auto", imp);
+      if(im){ hdr.styled.push({n: im, st: im.getAttribute("style")}); hpx(im, "icon", px); } else st.setProperty("font-size", px + "px", imp);
+      return;
+    }
+    if(t === "button"){ st.setProperty("width", px + "px", imp); st.setProperty("height", px + "px", imp); st.setProperty("flex", "none", imp); st.setProperty("--mpm-s", Math.round(px * .52) + "px"); }
+    else if(n.tagName === "IMG" && t === "icon"){   // hauteur fixe, largeur selon l'image (carrée ou en longueur)
+      st.setProperty("height", px + "px", imp); st.setProperty("width", "auto", imp); st.setProperty("min-width", px + "px", imp); st.setProperty("max-width", "100%", imp);
+      st.setProperty("flex", "0 1 auto", imp); st.setProperty("object-fit", "contain", imp); st.setProperty("object-position", "left center", imp); }   // trop large pour l'écran : rétrécie
     else if(n.tagName === "IMG"){ st.setProperty("height", px + "px", imp); st.setProperty("width", "auto", imp); st.setProperty("max-width", "100%", imp);
       st.setProperty("min-width", "0", imp); st.setProperty("object-fit", "contain", imp); st.setProperty("object-position", "left center", imp); }   // image (logo en titre) : hauteur, rétrécie si la place manque
     else st.setProperty("font-size", px + "px", imp);
@@ -385,6 +393,7 @@ nav.bottom .ico{font-size:20px;line-height:1}
       if(m.st === null) m.n.removeAttribute("style"); else m.n.setAttribute("style", m.st);
       if(m.next && m.next.parentNode === m.parent) m.parent.insertBefore(m.n, m.next); else if(m.parent) m.parent.appendChild(m.n); });
     hdr.hidden.forEach(function(n){ n.classList.remove("mph-hide"); });
+    hdr.styled.forEach(function(m){ if(m.st === null) m.n.removeAttribute("style"); else m.n.setAttribute("style", m.st); });
     hdr.box.remove(); hdr = null; document.documentElement.classList.remove("mph-on");
   }
   function renderHeader(){
@@ -402,7 +411,7 @@ nav.bottom .ico{font-size:20px;line-height:1}
     Object.keys(P).forEach(function(t){ var n = el(P[t]); if(!n || !row.contains(n) || n === row) return; var a = n; while(a.parentNode !== row) a = a.parentNode;
       if(!anchor || (anchor.compareDocumentPosition(a) & 2)) anchor = a; });
     row.insertBefore(box, anchor);
-    hdr = {box: box, moved: [], hidden: []};
+    hdr = {box: box, moved: [], hidden: [], styled: []};
     var stack = {}, used = {};
     var nodeOf = function(e){
       if(e.type === "button"){ var a = actionOf(e.id); if(!a) return null; var b = button({t: "btn", id: e.id, label: "", icon: "", color: ""}, "header"); b.classList.add("mph-btn"); return b; }
