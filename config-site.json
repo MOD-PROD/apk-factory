@@ -1,6 +1,6 @@
 {
   "access": "open",
-  "beta": true,
+  "beta": false,
   "installBanner": true,
   "announce": "",
   "tiers": {
@@ -42,5 +42,5 @@
     "droite": "",
     "bas": ""
   },
-  "updated": "2026-11-02T17:47:25.831Z"
+  "updated": "2026-11-03T13:47:52.706Z"
 }
