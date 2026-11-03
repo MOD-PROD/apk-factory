@@ -26,13 +26,13 @@
         "k": "e1",
         "type": "icon",
         "pos": "left",
-        "size": "m"
+        "size": 50
       },
       {
         "k": "e2",
         "type": "title",
         "pos": "left",
-        "size": "m"
+        "size": 48
       }
     ]
   },
@@ -42,5 +42,5 @@
     "droite": "",
     "bas": ""
   },
-  "updated": "2026-11-03T13:48:19.097Z"
+  "updated": "2026-11-03T14:56:31.226Z"
 }
