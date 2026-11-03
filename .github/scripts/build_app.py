@@ -140,7 +140,12 @@ def get_png(label, url, dest, expect=None):
     if not p:
         return None
     if not is_png(p):
-        fail(f"{label} : le fichier doit être une image PNG.")
+        head = Path(p).read_bytes()[:4000].lower()
+        if b"cloudflareaccess" in head or b"cf-access" in head or b"<html" in head:
+            fail(f"{label} : le site a renvoyé une page web au lieu de l'image. Vérifie l'application "
+                 "Cloudflare Access « robot » (chemin api/runner, stratégie Contourner / Tout le monde).")
+        else:
+            fail(f"{label} : le fichier doit être une image PNG.")
         return None
     w, h = png_size(p)
     if expect and (w, h) != expect:
