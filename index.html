@@ -103,7 +103,8 @@ nav.bottom .ico{font-size:20px;line-height:1}
    Réglés dans AppMod → appli → « Menus », publiés dans config-site.json → menus :
    {
      "v": 1, "size": 20, "color": "", "active": "", "bg": "",
-     "top":    { "pc": "both", "mobile": "off",  "items": [] },     ← Top menu
+     "top":    { "pc": "both", "mobile": "off",  "items": [],       ← Top menu
+                 "place": "below" },                                  ← sous l'en-tête, ou dans l'en-tête : "head-left" · "head-center" · "head-right"
      "bottom": { "pc": "off",  "mobile": "icon", "items": [] },     ← Bottom menu
      "side":   { "pc": "off",  "mobile": "off",  "items": [],       ← Slider menu (☰)
                  "btn": "auto", "from": "left" }
@@ -225,6 +226,7 @@ nav.bottom .ico{font-size:20px;line-height:1}
       ".mpm-b svg{width:var(--mpm-s);height:var(--mpm-s);flex:none}.mpm-b:hover{background:rgba(255,255,255,.06)}.mpm-b:focus-visible{outline:2px solid var(--mpm-active)}" +
       ".mpm-b.on{color:var(--mpm-active);background:rgba(255,255,255,.07)}.mpm-b span{overflow:hidden;text-overflow:ellipsis}" +
       ".mpm-top.in{position:static;border-bottom:0;padding-left:0;padding-right:0;background:transparent}" +
+      ".mpm-top.hd{position:static;flex:1 1 45%;min-width:0;border:0;padding:0 4px;background:transparent;overflow-x:auto;align-items:center}.mpm-top.hd.hl{justify-content:flex-start}.mpm-top.hd.hc{justify-content:center}.mpm-top.hd.hr{justify-content:flex-end}" +
       ".mpm-top{position:sticky;top:0;padding:6px max(10px,env(safe-area-inset-left));overflow-x:auto;scrollbar-width:none;border-bottom:1px solid rgba(255,255,255,.08)}.mpm-top::-webkit-scrollbar{display:none}" +
       ".mpm-bottom{position:fixed;left:0;right:0;bottom:0;justify-content:space-around;padding:4px 4px calc(4px + env(safe-area-inset-bottom));border-top:1px solid rgba(255,255,255,.08);z-index:56}" +
       ".mpm-bottom .mpm-b{flex:1 1 0;flex-direction:column;gap:3px;padding:6px 2px;font-size:11px}" +
@@ -297,6 +299,7 @@ nav.bottom .ico{font-size:20px;line-height:1}
     return out.length ? out : null;
   }
   var BTNPOS = ["auto", "header-left", "header-right", "top-left", "top-right", "bottom-left", "bottom-right"];
+  var TOPPLACE = ["below", "head-left", "head-center", "head-right"];
   function clean(m){
     if(!m || typeof m !== "object" || Array.isArray(m)) return null;
     var o = {size: +m.size >= 14 && +m.size <= 40 ? +m.size : 20, color: hex(m.color), active: hex(m.active), bg: hex(m.bg)}, any = false;
@@ -313,6 +316,7 @@ nav.bottom .ico{font-size:20px;line-height:1}
         o[k].items.push(b);
       });
       if(k === "side"){ o[k].btn = BTNPOS.indexOf(x.btn) >= 0 ? x.btn : "auto"; o[k].from = x.from === "right" ? "right" : "left"; }
+      if(k === "top") o[k].place = TOPPLACE.indexOf(x.place) >= 0 ? x.place : "below";
       if(o[k].pc !== "off" || o[k].mobile !== "off") any = true;
     });
     return any ? o : null;
@@ -466,7 +470,17 @@ nav.bottom .ico{font-size:20px;line-height:1}
     (opt && opt.native || []).forEach(function(s){ [].forEach.call(document.querySelectorAll(s), function(n){ n.classList.remove("mpm-native-off"); }); });
     if(timer){ clearInterval(timer); timer = null; }
   }
-  function render(){ renderMenus(); renderHeader(); paintActive(); if(hdr && !timer) timer = setInterval(paintActive, 1200); }
+  // Rangée de l'en-tête de l'appli (en-tête réglable, sinon rangée du bouton ☰)
+  function headRow(){ return el(opt && opt.header && opt.header.row) || el(opt && opt.burgerIn); }
+  // Top menu dans l'en-tête : juste après l'en-tête réglé, sinon après l'icône / le titre de l'appli
+  function placeTop(){
+    var b = built.filter(function(x){ return x.k === "top" && x.head; })[0], row = headRow(); if(!b || !row) return;
+    var ref = hdr && hdr.box && hdr.box.parentNode === row ? hdr.box : null, P = (opt.header && opt.header.parts) || {};
+    if(!ref) Object.keys(P).forEach(function(t){ var n = el(P[t]); if(!n || !row.contains(n) || n === row) return; var a = n; while(a.parentNode !== row) a = a.parentNode;
+      if(!ref || (ref.compareDocumentPosition(a) & 4)) ref = a; });
+    if(ref) row.insertBefore(b.nav, ref.nextSibling);
+  }
+  function render(){ renderMenus(); renderHeader(); placeTop(); paintActive(); if(hdr && !timer) timer = setInterval(paintActive, 1200); }
   function renderMenus(){
     teardown(); menuIds = [];
     if(!cfg) return;
@@ -500,6 +514,9 @@ nav.bottom .ico{font-size:20px;line-height:1}
       }
       lists[k].forEach(function(it){ nav.appendChild(button(it, k)); });
       if(k === "top" && host){ nav.classList.add("inpage"); host.insertBefore(nav, host.firstChild); host.classList.add("mpm-pgt"); }   // en haut de l'écran, au-dessus de la page ouverte
+      else if(k === "top" && cfg.top.place !== "below" && headRow()){   // Top menu dans l'en-tête (placé après l'icône / le titre, voir placeTop)
+        nav.classList.add("hd", {"head-left": "hl", "head-center": "hc", "head-right": "hr"}[cfg.top.place]); b.head = true; headRow().appendChild(nav);
+      }
       else if(k === "top"){
         var inside = el(opt.topIn), after = el(opt.topAfter);
         if(inside){ nav.classList.add("in"); inside.appendChild(nav); }                     // dans l'entête de l'appli (qui reste collée en haut)
