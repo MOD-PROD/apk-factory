@@ -37,10 +37,10 @@
     ]
   },
   "travaux": {
-    "mode": "construction",
+    "mode": "off",
     "gauche": "",
     "droite": "",
     "bas": ""
   },
-  "updated": "2026-11-03T13:47:52.706Z"
+  "updated": "2026-11-03T13:48:19.097Z"
 }
