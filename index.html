@@ -139,7 +139,8 @@ nav.bottom .ico{font-size:20px;line-height:1}
      ModProdMenu.apply(nouveauxReglages) pour réappliquer (ex. après lecture de la config en ligne).
    En-tête réglable (config-site.json → header.layout, écran « En-tête » d'AppMod) : liste d'éléments
      {"k": "e1", "type": "icon" | "title" | "subtitle" | "tag" | "version" | "button", "id": "<bouton de l'appli>" (button),
-      "pos": "left" | "center" | "right" | "above" | "below", "ref": "<k d'un autre élément>" (above / below), "size": "s" | "m" | "l"}
+      "pos": "left" | "center" | "right" | "above" | "below", "ref": "<k d'un autre élément>" (above / below),
+      "size": nombre en px (taille de l'icône / du bouton, hauteur d'une image, taille du texte) ou "s" | "m" | "l" (ancien réglage, encore lu)}
      Les éléments de l'appli (opt.header.parts) sont déplacés dans l'en-tête réglé ; les boutons viennent de opt.actions.
      Sans header.layout : en-tête d'origine. Un bouton indispensable (keep) absent des menus visibles est ajouté à droite.
      ModProdMenu.header(config.header) pour (ré)appliquer.
@@ -246,13 +247,29 @@ nav.bottom .ico{font-size:20px;line-height:1}
   }
   // Nettoyage côté appli (même règles que le serveur AppMod) : un réglage invalide est ignoré
   var HTYPES = ["icon", "title", "subtitle", "tag", "version", "button"], HPOS = ["left", "center", "right", "above", "below"];
+  // Tailles de l'en-tête en px : [S, M, L, min, max] par type d'élément (S/M/L = anciens réglages)
+  var HSZ = {icon: [24, 34, 46, 16, 96], button: [30, 38, 46, 24, 72], title: [15, 20, 27, 10, 48], subtitle: [11, 13, 14, 8, 32], tag: [9, 11, 13, 7, 24], version: [10, 11, 13, 7, 24]};
+  function hsize(t, v){
+    var r = HSZ[t] || HSZ.title, n = typeof v === "number" ? v : typeof v === "string" && /^\d+(\.\d+)?$/.test(v) ? +v : NaN;
+    if(isFinite(n)) return Math.round(Math.max(r[3], Math.min(r[4], n)));
+    return ["s", "m", "l"].indexOf(v) >= 0 ? v : "m";
+  }
+  // Taille en px : posée en style (gardé pour être retiré si l'en-tête est réglé autrement)
+  function hpx(n, t, px){
+    var st = n.style, imp = "important";
+    if(t === "button"){ st.setProperty("width", px + "px", imp); st.setProperty("height", px + "px", imp); st.setProperty("--mpm-s", Math.round(px * .52) + "px"); }
+    else if(n.tagName === "IMG" && t === "icon"){ st.setProperty("height", px + "px", imp); st.setProperty("width", px + "px", imp); st.setProperty("max-width", "none", imp); st.setProperty("flex", "none", imp); }
+    else if(n.tagName === "IMG"){ st.setProperty("height", px + "px", imp); st.setProperty("width", "auto", imp); st.setProperty("max-width", "100%", imp);
+      st.setProperty("min-width", "0", imp); st.setProperty("object-fit", "contain", imp); st.setProperty("object-position", "left center", imp); }   // image (logo en titre) : hauteur, rétrécie si la place manque
+    else st.setProperty("font-size", px + "px", imp);
+  }
   function cleanHeader(h){
     if(!h || typeof h !== "object" || !Array.isArray(h.layout) || !h.layout.length) return null;
     var seen = {}, out = [];
     h.layout.slice(0, 16).forEach(function(e, i){
       if(!e || HTYPES.indexOf(e.type) < 0) return;
       var k = /^[a-z0-9_-]{1,20}$/i.test(e.k || "") && !seen[e.k] ? e.k : "e" + i; seen[k] = 1;
-      var o = {k: k, type: e.type, pos: HPOS.indexOf(e.pos) >= 0 ? e.pos : "left", ref: String(e.ref || ""), size: ["s", "m", "l"].indexOf(e.size) >= 0 ? e.size : "m"};
+      var o = {k: k, type: e.type, pos: HPOS.indexOf(e.pos) >= 0 ? e.pos : "left", ref: String(e.ref || ""), size: hsize(e.type, e.size)};
       if(e.type === "button"){ if(!/^[a-z0-9_-]{1,30}$/i.test(e.id || "")) return; o.id = e.id; }
       out.push(o);
     });
@@ -365,6 +382,7 @@ nav.bottom .ico{font-size:20px;line-height:1}
   function teardownHeader(){
     if(!hdr) return;
     hdr.moved.forEach(function(m){ m.n.classList.remove("mph-sz-s", "mph-sz-m", "mph-sz-l"); m.n.removeAttribute("data-mph"); if(m.hid !== null) m.n.hidden = m.hid;
+      if(m.st === null) m.n.removeAttribute("style"); else m.n.setAttribute("style", m.st);
       if(m.next && m.next.parentNode === m.parent) m.parent.insertBefore(m.n, m.next); else if(m.parent) m.parent.appendChild(m.n); });
     hdr.hidden.forEach(function(n){ n.classList.remove("mph-hide"); });
     hdr.box.remove(); hdr = null; document.documentElement.classList.remove("mph-on");
@@ -390,13 +408,13 @@ nav.bottom .ico{font-size:20px;line-height:1}
       if(e.type === "button"){ var a = actionOf(e.id); if(!a) return null; var b = button({t: "btn", id: e.id, label: "", icon: "", color: ""}, "header"); b.classList.add("mph-btn"); return b; }
       if(used[e.type]) return null;
       var n = el(P[e.type]); if(!n) return null; used[e.type] = 1;
-      hdr.moved.push({n: n, parent: n.parentNode, next: n.nextSibling, hid: e.type === "version" || e.type === "subtitle" ? n.hidden : null});
+      hdr.moved.push({n: n, parent: n.parentNode, next: n.nextSibling, hid: e.type === "version" || e.type === "subtitle" ? n.hidden : null, st: n.getAttribute("style")});
       if(e.type === "version" || e.type === "subtitle") n.hidden = false;
       n.setAttribute("data-mph", e.type); return n;
     };
     hcfg.forEach(function(e){
       var n = nodeOf(e); if(!n) return;
-      n.classList.add("mph-sz-" + e.size);
+      if(typeof e.size === "number") hpx(n, e.type, e.size); else n.classList.add("mph-sz-" + e.size);
       if((e.pos === "above" || e.pos === "below") && stack[e.ref]){
         var s = stack[e.ref]; if(e.pos === "above") s.insertBefore(n, s.firstChild); else s.appendChild(n); stack[e.k] = s; return;
       }
