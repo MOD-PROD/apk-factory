@@ -115,6 +115,7 @@ jobs:
         env:
           WORK_DIR: work
           OPTIONS_TEMPLATE: tools/options-template.json
+          CALLBACK_TOKEN: ${{ secrets.CALLBACK_TOKEN }}
           IN_TYPE: ${{ inputs.type }}
           IN_APP_NAME: ${{ inputs.app_name }}
           IN_PACKAGE: ${{ inputs.package_name }}

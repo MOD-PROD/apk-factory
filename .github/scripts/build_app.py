@@ -96,6 +96,12 @@ def download(url, dest):
     """Télécharge url dans dest (50 Mo max). Renvoie le chemin ou None en cas d'erreur."""
     dest.parent.mkdir(parents=True, exist_ok=True)
     req = urllib.request.Request(url, headers={"User-Agent": "apk-factory"})
+    # Fichiers envoyés depuis le site : authentification par CALLBACK_TOKEN, seulement vers le site lui-même
+    # (en-tête « non redirigé » : jamais renvoyé à un autre serveur).
+    site, token = env("SITE_URL"), env("CALLBACK_TOKEN")
+    if site and token and urllib.parse.urlparse(url).netloc == urllib.parse.urlparse(site).netloc \
+            and urllib.parse.urlparse(url).scheme == "https":
+        req.add_unredirected_header("Authorization", f"Bearer {token}")
     try:
         with urllib.request.urlopen(req, timeout=60) as r, open(dest, "wb") as f:
             total = 0

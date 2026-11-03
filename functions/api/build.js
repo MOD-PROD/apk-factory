@@ -63,9 +63,9 @@ export async function onRequestPost({ request, env }) {
   if (errors.length) return json({ errors }, 400);
 
   const job = newJobId();
-  const fileKey = randomHex(16);   // lu par GitHub pour récupérer les images
   const dlKey = randomHex(16);     // lien de téléchargement de l'APK (QR code)
-  const base = `${site(env)}/api/runner/file?job=${job}&k=${fileKey}&name=`;
+  // Adresse sans secret : GitHub s'authentifie avec CALLBACK_TOKEN (en-tête), rien ne fuit dans les journaux.
+  const base = `${site(env)}/api/runner/file?job=${job}&name=`;
 
   if (banner) await env.FILES.put(`jobs/${job}/banner.png`, banner, { httpMetadata: { contentType: "image/png" } });
   if (icon) await env.FILES.put(`jobs/${job}/icon.png`, icon, { httpMetadata: { contentType: "image/png" } });
@@ -73,7 +73,7 @@ export async function onRequestPost({ request, env }) {
   const data = {
     job, type, status: "queued", createdAt: new Date().toISOString(), signing: SIGNING,
     appName, packageName, versionName, versionCode: +versionCode, mode, targetUrl, targetApk, isGame,
-    fileKey, dlKey, files: [banner && "banner.png", icon && "icon.png"].filter(Boolean),
+    dlKey, files: [banner && "banner.png", icon && "icon.png"].filter(Boolean),
   };
   await writeJob(env, data);
 
