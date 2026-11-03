@@ -42,5 +42,39 @@
     "droite": "",
     "bas": ""
   },
-  "updated": "2026-11-03T14:56:31.226Z"
+  "updated": "2026-11-03T23:23:59.676Z",
+  "menus": {
+    "v": 1,
+    "size": null,
+    "color": "",
+    "active": "",
+    "bg": "",
+    "top": {
+      "pc": "off",
+      "mobile": "off",
+      "on": false,
+      "text": true,
+      "show": "mobile",
+      "items": [],
+      "place": "below"
+    },
+    "bottom": {
+      "pc": "off",
+      "mobile": "off",
+      "on": false,
+      "text": true,
+      "show": "mobile",
+      "items": []
+    },
+    "side": {
+      "pc": "off",
+      "mobile": "off",
+      "on": false,
+      "text": true,
+      "show": "mobile",
+      "items": [],
+      "btn": "header-right",
+      "from": "left"
+    }
+  }
 }
