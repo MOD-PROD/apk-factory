@@ -7,6 +7,7 @@
 <meta name="description" content="Createur d’applications Android : APK signés (site web, HTML, lanceur AndroidTv)">
 <meta name="theme-color" content="#141a21">
 <link rel="manifest" href="manifest.webmanifest">
+<script src="vendor/qrcode.js" defer></script>
 <link rel="icon" type="image/png" href="icons/icon-192.png?v=2026-11-03.1">
 <link rel="apple-touch-icon" href="icons/apple-180.png?v=2026-11-03.1">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -96,6 +97,63 @@ nav.bottom .ico{font-size:20px;line-height:1}
 .apps small{color:var(--texte2)}
 .apps .soon{opacity:.5;pointer-events:none}
 .foot{text-align:center;color:var(--texte2);font-size:12px;margin:24px 0 8px}
+
+/* ---- Fabrique : types d'applis ---- */
+.types{display:grid;gap:10px}
+.type{display:flex;gap:12px;align-items:center;width:100%;text-align:left;padding:12px;border-radius:var(--arrondi);
+  background:var(--surface2);border:1px solid var(--bord)}
+.type .ti{font-size:24px;width:36px;text-align:center}
+.type b{display:block}
+.type small{color:var(--texte2)}
+.type[disabled]{opacity:.5;cursor:default}
+.type:not([disabled]):hover{border-color:var(--accent)}
+
+/* ---- Formulaires ---- */
+.field{display:block;margin:0 0 14px}
+.field > span{display:block;font-weight:600;margin-bottom:5px}
+.field small{display:block;color:var(--texte2);font-size:13px;margin-top:4px}
+.field input[type=text],.field input[type=url],.field input[type=number]{width:100%;min-height:44px;padding:8px 12px;font:inherit;
+  color:var(--texte);background:var(--surface2);border:1px solid var(--bord);border-radius:var(--arrondi)}
+.field input:focus{outline:2px solid var(--accent);outline-offset:1px}
+.field input[aria-invalid=true]{border-color:var(--alerte)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg label{flex:1 1 auto;min-width:0}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg span{display:block;text-align:center;padding:10px 8px;border-radius:var(--arrondi);border:1px solid var(--bord);
+  background:var(--surface2);font-size:14px;cursor:pointer}
+.seg input:checked + span{border-color:var(--accent);color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,var(--surface2))}
+.seg input:focus-visible + span{outline:2px solid var(--accent)}
+.check{display:flex;gap:10px;align-items:center;margin:0 0 14px;cursor:pointer}
+.check input{width:20px;height:20px;accent-color:var(--accent)}
+.pick{display:flex;gap:12px;align-items:center}
+.pick canvas{background:var(--surface2);border:1px dashed var(--bord);border-radius:8px;flex:none}
+.pick .pb{display:flex;flex-direction:column;gap:6px;min-width:0}
+.pick .btn{min-height:38px;padding:0 12px;font-size:14px}
+details.more{margin:0 0 14px}
+details.more summary{cursor:pointer;color:var(--texte2);margin-bottom:10px}
+.errs{margin:0 0 14px;padding:10px 12px 10px 28px;border-radius:var(--arrondi);color:var(--texte);
+  background:color-mix(in srgb,var(--alerte) 15%,var(--surface));border:1px solid color-mix(in srgb,var(--alerte) 50%,transparent)}
+.wide{width:100%}
+a.btn{text-decoration:none}
+
+/* ---- Suivi et résultat ---- */
+.progress{display:flex;gap:12px;align-items:center}
+.spin{width:22px;height:22px;border-radius:50%;border:3px solid var(--bord);border-top-color:var(--accent);animation:spin 1s linear infinite;flex:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+.result{display:grid;gap:12px;justify-items:center;text-align:center}
+.result .qr{background:#fff;padding:10px;border-radius:8px;line-height:0}
+.result .qr img{width:200px;height:200px;image-rendering:pixelated}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;word-break:break-all;color:var(--texte2)}
+.jobs{list-style:none;margin:0;padding:0}
+.jobs li{display:flex;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--bord)}
+.jobs li:first-child{border-top:0}
+.jobs .jn{flex:1;min-width:0}
+.jobs .jn b,.jobs .jn small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.jobs small{color:var(--texte2)}
+.st{font-size:12px;padding:2px 8px;border-radius:999px;border:1px solid var(--bord);white-space:nowrap}
+.st.done{color:#3fb950;border-color:#3fb95066}
+.st.failed{color:var(--alerte);border-color:color-mix(in srgb,var(--alerte) 50%,transparent)}
 </style>
 <!-- MODPROD-MENU : début (copie de modprod-app-template/modprod-menu.js, ne pas modifier ici) -->
 <script>
@@ -824,17 +882,117 @@ nav.bottom .ico{font-size:20px;line-height:1}
 </section>
 
 <main id="app">
-  <!-- ===== Écran « Accueil » : à remplacer par le contenu de l'appli ===== -->
+  <!-- ===== Écran « Accueil » : choix du type d'appli ===== -->
   <section data-page="accueil">
     <div class="card">
-      <h2>Bienvenue</h2>
-      <p>Createur d’applications Android : APK signés (site web, HTML, lanceur AndroidTv)</p>
-      <p>Cette page est le point de départ de l'appli. Le contenu se construit ici.</p>
+      <h2>Fabriquer une appli</h2>
+      <p>Remplis un formulaire, l'APK est fabriqué et signé en 1 à 2 minutes. Tu le récupères par lien ou QR code.</p>
     </div>
     <div class="card">
-      <h2>Exemple de fonction réglable</h2>
-      <p>Ce bouton suit la formule réglée dans la console (Activé, Cadenas ou Masqué).</p>
-      <button class="btn" data-feature="exemple">Fonction d'exemple</button>
+      <div class="types">
+        <button class="type" type="button" data-open="atv"><span class="ti">📺</span>
+          <span><b>Lanceur Android TV</b><small>Une tuile sur l'accueil de la TV qui ouvre un lien ou une appli</small></span></button>
+        <button class="type" type="button" disabled><span class="ti">🌐</span>
+          <span><b>Site web</b><small>Bientôt</small></span></button>
+        <button class="type" type="button" disabled><span class="ti">📄</span>
+          <span><b>Appli HTML</b><small>Bientôt</small></span></button>
+        <button class="type" type="button" disabled><span class="ti">🎮</span>
+          <span><b>Appli HTML pour TV</b><small>Bientôt</small></span></button>
+      </div>
+    </div>
+    <div class="card" id="historyCard" hidden>
+      <h2>Dernières fabrications</h2>
+      <ul class="jobs" id="history"></ul>
+    </div>
+  </section>
+
+  <!-- ===== Écran « Lanceur TV » ===== -->
+  <section data-page="atv" hidden>
+    <form class="card" id="atvForm" novalidate>
+      <h2>Lanceur Android TV</h2>
+      <p>Crée une tuile sur l'écran d'accueil de la TV.</p>
+
+      <label class="field"><span>Nom du lanceur</span>
+        <input type="text" name="appName" id="atvName" maxlength="50" required autocomplete="off" placeholder="YouTube"></label>
+
+      <div class="field"><span>Action au lancement</span>
+        <div class="seg" role="radiogroup">
+          <label><input type="radio" name="mode" value="url" checked><span>Ouvrir un lien</span></label>
+          <label><input type="radio" name="mode" value="apk"><span>Ouvrir une appli</span></label>
+          <label><input type="radio" name="mode" value="apkToUrl"><span>Appli, sinon lien</span></label>
+        </div></div>
+
+      <label class="field" id="fUrl"><span>Lien cible</span>
+        <input type="url" name="targetUrl" maxlength="2000" autocomplete="off" inputmode="url" placeholder="https://…">
+        <small>https://… ou intent://…#Intent;scheme=https;end</small></label>
+
+      <label class="field" id="fApk" hidden><span>Package de l'appli cible</span>
+        <input type="text" name="targetApk" list="tvApps" maxlength="150" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="com.google.android.youtube.tv">
+        <small>Visible dans Paramètres → Applis de la TV, ou sur la page Play Store de l'appli (id=…).</small></label>
+      <datalist id="tvApps">
+        <option value="com.google.android.youtube.tv">YouTube (TV)</option>
+        <option value="com.netflix.ninja">Netflix (TV)</option>
+        <option value="com.amazon.amazonvideo.livingroom">Prime Video (TV)</option>
+        <option value="com.disney.disneyplus">Disney+</option>
+        <option value="org.xbmc.kodi">Kodi</option>
+        <option value="org.videolan.vlc">VLC</option>
+        <option value="com.plexapp.android">Plex</option>
+      </datalist>
+
+      <div class="field"><span>Bannière TV <small style="display:inline">(320 × 180)</small></span>
+        <div class="pick">
+          <canvas id="bannerPrev" width="320" height="180" style="width:160px;height:90px"></canvas>
+          <div class="pb">
+            <label class="btn ghost">Choisir une image<input type="file" accept="image/*" id="bannerFile" hidden></label>
+            <button class="btn ghost" type="button" id="bannerClear" hidden>Retirer</button>
+          </div>
+        </div>
+        <small>N'importe quelle image : elle est recadrée en 320 × 180 PNG. Sans bannière, celle de base est gardée.</small></div>
+
+      <div class="field"><span>Icône <small style="display:inline">(carrée)</small></span>
+        <div class="pick">
+          <canvas id="iconPrev" width="512" height="512" style="width:72px;height:72px"></canvas>
+          <div class="pb">
+            <label class="btn ghost">Choisir une image<input type="file" accept="image/*" id="iconFile" hidden></label>
+            <button class="btn ghost" type="button" id="iconClear" hidden>Retirer</button>
+          </div>
+        </div>
+        <small>Recadrée en 512 × 512 PNG. Facultative.</small></div>
+
+      <label class="check"><input type="checkbox" name="isGame" value="true"><span>Ranger dans la rangée « Jeux » de la TV</span></label>
+
+      <details class="more">
+        <summary>Options avancées (package, version)</summary>
+        <label class="field"><span>Nom de package</span>
+          <input type="text" name="packageName" id="atvPkg" maxlength="150" autocomplete="off" autocapitalize="none" spellcheck="false">
+          <small>Rempli à partir du nom. Garde le même pour mettre à jour un lanceur déjà installé.</small></label>
+        <div class="row2">
+          <label class="field"><span>Version</span>
+            <input type="text" name="versionName" value="1.0.0" maxlength="50" autocomplete="off"></label>
+          <label class="field"><span>Code de version</span>
+            <input type="number" name="versionCode" value="1" min="1" step="1" inputmode="numeric">
+            <small>+1 à chaque mise à jour</small></label>
+        </div>
+      </details>
+
+      <ul class="errs" id="atvErrs" hidden></ul>
+      <button class="btn wide" type="submit" id="atvGo">Fabriquer l'APK</button>
+    </form>
+
+    <div class="card" id="jobCard" hidden>
+      <h2 id="jobTitle">Fabrication</h2>
+      <div class="progress" id="jobProgress"><div class="spin"></div><div><b id="jobStep">Envoi…</b><br><small class="mono" id="jobId"></small></div></div>
+      <div class="result" id="jobResult" hidden>
+        <p id="jobInfo"></p>
+        <a class="btn wide" id="jobDl" href="#">Télécharger l'APK</a>
+        <div class="qr" id="jobQr"></div>
+        <small>Scanne le QR code, ou tape le lien dans Downloader sur la TV :</small>
+        <span class="mono" id="jobLink"></span>
+        <button class="btn ghost" type="button" id="jobCopy">Copier le lien</button>
+      </div>
+      <ul class="errs" id="jobErr" hidden></ul>
+      <p><a id="jobRun" href="#" target="_blank" rel="noopener" hidden>Voir le détail sur GitHub</a></p>
+      <button class="btn ghost wide" type="button" id="jobNew">Fabriquer un autre lanceur</button>
     </div>
   </section>
 
@@ -851,6 +1009,7 @@ nav.bottom .ico{font-size:20px;line-height:1}
 
 <nav class="bottom" id="nav">
   <button data-go="accueil" aria-current="page"><span class="ico">⌂</span>Accueil</button>
+  <button data-go="atv"><span class="ico">📺</span>Lanceur TV</button>
   <button data-go="applis"><span class="ico">▦</span>Applis</button>
 </nav>
 
@@ -1012,6 +1171,7 @@ function go(page){
   document.querySelectorAll("[data-page]").forEach(s => s.hidden = s.dataset.page !== page);
   document.querySelectorAll("#nav [data-go]").forEach(b => b.toggleAttribute("aria-current", b.dataset.go === page));
   if(page === "applis") loadApps();
+  if(page === "accueil" && typeof renderHistory === "function") renderHistory();
   scrollTo(0, 0);
 }
 document.querySelectorAll("#nav [data-go]").forEach(b => b.addEventListener("click", () => go(b.dataset.go)));
@@ -1038,6 +1198,217 @@ async function loadApps(){
   appsLoaded = true;
 }
 
+/* =====================================================================
+   FABRIQUE — Lanceur Android TV
+   Le formulaire part vers /api/build (fonction Cloudflare), qui lance le
+   workflow GitHub ; /api/status donne l'avancement puis le lien de l'APK.
+   ===================================================================== */
+const JAVA_RESERVED = new Set(("abstract assert boolean break byte case catch char class const continue default do double else enum extends " +
+  "false final finally float for goto if implements import instanceof int interface long native new null package private protected public " +
+  "return short static strictfp super switch synchronized this throw throws transient true try void volatile while var record yield sealed permits").split(" "));
+const HISTORY_KEY = "apkf.jobs";
+
+function slug(s){
+  let x = String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "");
+  if(!x) return "";
+  if(!/^[a-z]/.test(x)) x = "a" + x;
+  if(JAVA_RESERVED.has(x)) x += "_app";
+  return x.slice(0, 40);
+}
+function pkgErrors(pkg){
+  if(!pkg) return ["Nom de package obligatoire."];
+  const parts = pkg.split("."), out = [];
+  if(parts.length < 2) out.push("Nom de package : au moins deux segments (ex. app.modprod.atvlink.youtube).");
+  for(const p of parts){
+    if(!/^[a-z][a-z0-9_]*$/.test(p)) out.push(`Nom de package : « ${p || "(vide)"} » doit être en minuscules et commencer par une lettre.`);
+    else if(JAVA_RESERVED.has(p)) out.push(`Nom de package : « ${p} » est un mot réservé Java.`);
+  }
+  return out;
+}
+
+/* --- Images : recadrées au bon format, en PNG --- */
+const images = {banner: null, icon: null};
+function drawCover(canvas, img){
+  const c = canvas.getContext("2d"), W = canvas.width, H = canvas.height;
+  const s = Math.max(W / img.width, H / img.height), w = img.width * s, h = img.height * s;
+  c.clearRect(0, 0, W, H);
+  c.imageSmoothingQuality = "high";
+  c.drawImage(img, (W - w) / 2, (H - h) / 2, w, h);
+}
+function clearCanvas(canvas){ canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height); }
+function setupPicker(kind){
+  const input = $("#" + kind + "File"), canvas = $("#" + kind + "Prev"), clear = $("#" + kind + "Clear");
+  input.addEventListener("change", () => {
+    const f = input.files && input.files[0];
+    if(!f) return;
+    const url = URL.createObjectURL(f), img = new Image();
+    img.onload = () => {
+      drawCover(canvas, img); URL.revokeObjectURL(url);
+      canvas.toBlob(b => { images[kind] = b; clear.hidden = false; }, "image/png");
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); alert("Image illisible."); };
+    img.src = url;
+    input.value = "";
+  });
+  clear.addEventListener("click", () => { images[kind] = null; clearCanvas(canvas); clear.hidden = true; });
+}
+setupPicker("banner");
+setupPicker("icon");
+
+/* --- Formulaire --- */
+const atvForm = $("#atvForm"), atvPkg = $("#atvPkg");
+let pkgTouched = false;
+$("#atvName").addEventListener("input", e => { if(!pkgTouched){ const s = slug(e.target.value); atvPkg.value = s ? "app.modprod.atvlink." + s : ""; } });
+atvPkg.addEventListener("input", () => { pkgTouched = atvPkg.value.trim() !== ""; });
+function syncMode(){
+  const m = atvForm.mode.value;
+  $("#fUrl").hidden = m === "apk";
+  $("#fApk").hidden = m === "url";
+}
+atvForm.querySelectorAll("input[name=mode]").forEach(r => r.addEventListener("change", syncMode));
+syncMode();
+
+function showErrors(box, list){
+  box.textContent = "";
+  list.forEach(t => { const li = document.createElement("li"); li.textContent = t; box.append(li); });
+  box.hidden = !list.length;
+  if(list.length) box.scrollIntoView({block: "center", behavior: "smooth"});
+}
+
+atvForm.addEventListener("submit", async e => {
+  e.preventDefault();
+  const f = atvForm, m = f.mode.value, errs = [];
+  const name = f.appName.value.trim(), url = f.targetUrl.value.trim(), apk = f.targetApk.value.trim();
+  if(!atvPkg.value.trim() && name) atvPkg.value = slug(name) ? "app.modprod.atvlink." + slug(name) : "";
+  const pkg = atvPkg.value.trim();
+  if(!name) errs.push("Nom du lanceur obligatoire.");
+  errs.push(...pkgErrors(pkg));
+  if(m !== "apk" && !/^(https:\/\/|intent:\/\/)\S+$/.test(url)) errs.push("Lien cible : il doit commencer par https:// ou intent://.");
+  if(m !== "url" && !/^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z][A-Za-z0-9_]*)+$/.test(apk)) errs.push("Package de l'appli cible invalide (ex. com.google.android.youtube.tv).");
+  if(!/^\d+$/.test(f.versionCode.value) || +f.versionCode.value < 1) errs.push("Code de version : nombre entier à partir de 1.");
+  if(errs.length && errs.some(t => t.startsWith("Nom de package"))) f.querySelector("details.more").open = true;
+  showErrors($("#atvErrs"), errs);
+  if(errs.length) return;
+
+  const fd = new FormData();
+  fd.append("type", "atv");
+  fd.append("appName", name);
+  fd.append("packageName", pkg);
+  fd.append("mode", m);
+  if(m !== "apk") fd.append("targetUrl", url);
+  if(m !== "url") fd.append("targetApk", apk);
+  fd.append("isGame", f.isGame.checked ? "true" : "false");
+  fd.append("versionName", f.versionName.value.trim() || "1.0.0");
+  fd.append("versionCode", f.versionCode.value);
+  if(images.banner) fd.append("banner", images.banner, "banner.png");
+  if(images.icon) fd.append("icon", images.icon, "icon.png");
+
+  const go_ = $("#atvGo");
+  go_.disabled = true; go_.textContent = "Envoi…";
+  try{
+    const r = await fetch("api/build", {method: "POST", body: fd, credentials: "same-origin"});
+    const d = await r.json().catch(() => ({}));
+    if(!r.ok || !d.job){
+      showErrors($("#atvErrs"), d.errors || [d.error || `Erreur ${r.status} : réessaie dans un moment.`]);
+      if(d.job) remember({job: d.job, appName: name, status: "failed"});
+      return;
+    }
+    remember({job: d.job, appName: name, packageName: pkg, status: "queued", createdAt: new Date().toISOString()});
+    openJob(d.job, name);
+  }catch(err){
+    showErrors($("#atvErrs"), ["Pas de connexion avec le site. Vérifie ta connexion et réessaie."]);
+  }finally{
+    go_.disabled = false; go_.textContent = "Fabriquer l'APK";
+  }
+});
+
+/* --- Suivi d'une fabrication --- */
+let pollTimer = null, currentJob = null;
+function openJob(job, name){
+  currentJob = job;
+  go("atv");
+  atvForm.hidden = true;
+  const c = $("#jobCard"); c.hidden = false;
+  $("#jobTitle").textContent = name || "Fabrication";
+  $("#jobId").textContent = "Tâche " + job;
+  $("#jobProgress").hidden = false; $("#jobResult").hidden = true; $("#jobErr").hidden = true; $("#jobRun").hidden = true;
+  $("#jobStep").textContent = "Lancement de la fabrication…";
+  clearTimeout(pollTimer);
+  poll(job, Date.now());
+}
+async function poll(job, started){
+  if(job !== currentJob) return;
+  let d = null;
+  try{
+    const r = await fetch("api/status", {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({job}), credentials: "same-origin"});
+    d = await r.json().catch(() => null);
+    if(r.status === 404){ showJobError(["Tâche introuvable (expirée ?)."]); return; }
+  }catch(e){ /* réseau : on réessaie */ }
+  if(job !== currentJob) return;
+  if(d){
+    if(d.runUrl){ const a = $("#jobRun"); a.href = d.runUrl; a.hidden = false; }
+    remember({job, status: d.status, appName: d.appName, packageName: d.packageName});
+    if(d.status === "done" && d.apk){ showResult(d); return; }
+    if(d.status === "failed"){ showJobError([d.error || "La fabrication a échoué."]); return; }
+    const sec = Math.round((Date.now() - started) / 1000);
+    $("#jobStep").textContent = (d.step || "En attente d'une machine GitHub") + " · " + sec + " s";
+  }
+  pollTimer = setTimeout(() => poll(job, started), 4000);
+}
+function showJobError(list){
+  $("#jobProgress").hidden = true;
+  showErrors($("#jobErr"), list);
+}
+function fmtSize(n){ return n ? (n / 1048576).toFixed(1).replace(".", ",") + " Mo" : ""; }
+function showResult(d){
+  $("#jobProgress").hidden = true;
+  $("#jobResult").hidden = false;
+  $("#jobInfo").textContent = `${d.packageName} · v${d.versionName} (${d.versionCode})` + (d.apk.size ? " · " + fmtSize(d.apk.size) : "");
+  const dl = $("#jobDl"); dl.href = d.apk.url; dl.setAttribute("download", d.apk.name);
+  $("#jobLink").textContent = d.apk.url;
+  const box = $("#jobQr"); box.textContent = "";
+  if(window.qrcode){
+    const q = qrcode(0, "M"); q.addData(d.apk.url); q.make();
+    const img = new Image(); img.alt = "QR code du lien de l'APK"; img.src = q.createDataURL(6, 2); box.append(img);
+  }
+}
+$("#jobCopy").addEventListener("click", async () => {
+  try{ await navigator.clipboard.writeText($("#jobLink").textContent); $("#jobCopy").textContent = "Lien copié"; }
+  catch(e){ prompt("Copie ce lien :", $("#jobLink").textContent); }
+  setTimeout(() => { $("#jobCopy").textContent = "Copier le lien"; }, 2000);
+});
+$("#jobNew").addEventListener("click", () => {
+  currentJob = null; clearTimeout(pollTimer);
+  $("#jobCard").hidden = true; atvForm.hidden = false; $("#atvErrs").hidden = true;
+  scrollTo(0, 0);
+});
+
+/* --- Historique (sur cet appareil) --- */
+function loadHistory(){ try{ return JSON.parse(localStorage.getItem(HISTORY_KEY)) || []; }catch(e){ return []; } }
+function remember(j){
+  const list = loadHistory(), i = list.findIndex(x => x.job === j.job);
+  const clean = Object.fromEntries(Object.entries(j).filter(([, v]) => v !== undefined && v !== null));
+  if(i >= 0) Object.assign(list[i], clean); else list.unshift(clean);
+  try{ localStorage.setItem(HISTORY_KEY, JSON.stringify(list.slice(0, 15))); }catch(e){}
+}
+const STATUS_TXT = {queued: "en attente", running: "en cours", done: "prêt", failed: "échec"};
+function renderHistory(){
+  const list = loadHistory(), ul = $("#history");
+  $("#historyCard").hidden = !list.length;
+  ul.textContent = "";
+  list.forEach(j => {
+    const li = document.createElement("li"), n = document.createElement("span"), b = document.createElement("b"), s = document.createElement("small");
+    n.className = "jn"; b.textContent = j.appName || j.job; s.textContent = (j.packageName || "") + " · " + j.job;
+    n.append(b, s);
+    const st = document.createElement("span"); st.className = "st " + (j.status || ""); st.textContent = STATUS_TXT[j.status] || j.status || "";
+    const open = document.createElement("button"); open.className = "btn ghost"; open.type = "button"; open.textContent = "Ouvrir";
+    open.style.cssText = "min-height:36px;padding:0 10px;font-size:13px";
+    open.addEventListener("click", () => openJob(j.job, j.appName));
+    li.append(n, st, open); ul.append(li);
+  });
+}
+document.querySelectorAll("[data-open]").forEach(b => b.addEventListener("click", () => go(b.dataset.open)));
+
 /* ---------- Installation (PWA) ---------- */
 let installEvt = null;
 function updateInstall(){ $("#install").hidden = !(installEvt && MP.config.installBanner); }
@@ -1050,9 +1421,10 @@ $("#install").addEventListener("click", async () => {
 
 /* ---------- Démarrage ---------- */
 $("#ver").textContent = "· v" + APP.version;
+renderHistory();
 $("#hver").textContent = "v" + APP.version;
 // Menus réglés dans AppMod (config-site.json → menus). Nouvelle appli : déclarer ici ses écrans (mêmes identifiants que menuActions dans AppMod).
-const MENU_ACTIONS = [{id: "accueil", label: "Accueil", icon: "home"}, {id: "applis", label: "Applis", icon: "grid"}].map(a => Object.assign(a, {el: '#nav [data-go="' + a.id + '"]',
+const MENU_ACTIONS = [{id: "accueil", label: "Accueil", icon: "home"}, {id: "atv", label: "Lanceur TV", icon: "box"}, {id: "applis", label: "Applis", icon: "grid"}].map(a => Object.assign(a, {el: '#nav [data-go="' + a.id + '"]',
   run: () => go(a.id), active: () => { const b = document.querySelector('#nav [data-go="' + a.id + '"]'); return !!(b && b.hasAttribute("aria-current")); }}));
 ModProdMenu.init({config: MP.config.menus, assets: /(^|\.)modprod\.app$/.test(location.hostname) ? "" : APP.site, actions: MENU_ACTIONS, native: ["#nav"], topAfter: "header.top",
   // En-tête réglé dans AppMod (config-site.json → header.layout) : éléments de l'appli placés dans l'en-tête

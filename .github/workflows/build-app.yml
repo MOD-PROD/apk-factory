@@ -67,7 +67,7 @@ on:
         description: "Identifiant de tâche (rempli par le site en phase 2)"
         default: ""
 
-run-name: "${{ inputs.type }} · ${{ inputs.app_name }} (${{ inputs.package_name }})"
+run-name: "${{ inputs.job_id && format('[{0}] ', inputs.job_id) || '' }}${{ inputs.type }} · ${{ inputs.app_name }} (${{ inputs.package_name }})"
 
 permissions:
   contents: read
@@ -75,6 +75,7 @@ permissions:
 env:
   MORPHE_VERSION: '2.0.0-dev.4'
   PATCHES_REPO: 'MOD-PROD/modprod-apk-creator'
+  SITE_URL: 'https://apk-factory.modprod.app'
   JAVA_TOOL_OPTIONS: '-Dfile.encoding=UTF-8 -Dstdout.encoding=UTF-8 -Dstderr.encoding=UTF-8'
 
 jobs:
@@ -84,12 +85,12 @@ jobs:
     timeout-minutes: 20
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           sparse-checkout: .github
 
       - name: Setup Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
           java-version: '21'
@@ -129,7 +130,10 @@ jobs:
           IN_ATV_TARGET_APK: ${{ inputs.atv_target_apk }}
           IN_BANNER_URL: ${{ inputs.banner_url }}
           IN_ATV_IS_GAME: ${{ inputs.atv_is_game }}
-        run: python3 -I .github/scripts/build_app.py
+        run: |
+          mkdir -p work
+          python3 -I .github/scripts/build_app.py 2>&1 | tee work/prep.log
+          exit "${PIPESTATUS[0]}"
 
       - name: Patcher avec Morphe CLI
         run: |
@@ -140,7 +144,7 @@ jobs:
             -r work/result.json \
             -o work/unsigned.apk \
             "tools/${{ steps.prep.outputs.base }}"
-          python3 - <<'EOF'
+          python3 - <<'EOF' | tee work/morphe.log
           import json, sys
           r = json.load(open("work/result.json", encoding="utf-8"))
           print(json.dumps(r, ensure_ascii=False, indent=2)[:4000])
@@ -148,6 +152,7 @@ jobs:
               print("::error::Morphe : le patch a échoué (voir le résultat ci-dessus).")
               sys.exit(1)
           EOF
+          exit "${PIPESTATUS[0]}"
 
       - name: Signer avec la clé ModProd
         env:
@@ -177,6 +182,7 @@ jobs:
           PKG: ${{ steps.prep.outputs.package }}
           IN_APP_NAME: ${{ inputs.app_name }}
           IN_TYPE: ${{ inputs.type }}
+          JOB_ID: ${{ inputs.job_id }}
         run: |
           APK="out/$APK_NAME"
           "$BT/apksigner" verify --print-certs "$APK" | tee work/certs.txt
@@ -194,6 +200,7 @@ jobs:
             echo "| Fichier | \`$APK_NAME\` ($(du -h "$APK" | cut -f1)) |"
             echo "| Patches | $(basename "$MPP_URL") · Morphe $MORPHE_VERSION |"
             echo "| Certificat SHA-256 | \`$(grep -m1 'SHA-256' work/certs.txt | awk '{print $NF}')\` |"
+            [ -n "$JOB_ID" ] && echo "| Tâche du site | \`$JOB_ID\` |"
             echo
             echo "L'APK est dans **Artifacts**, en bas de cette page (gardé 7 jours)."
           } >> "$GITHUB_STEP_SUMMARY"
@@ -205,6 +212,38 @@ jobs:
           path: out/${{ steps.prep.outputs.apk_name }}
           retention-days: 7
           if-no-files-found: error
+
+      - name: Envoyer l'APK au site
+        if: inputs.job_id != ''
+        env:
+          CALLBACK_TOKEN: ${{ secrets.CALLBACK_TOKEN }}
+          JOB_ID: ${{ inputs.job_id }}
+          APK_NAME: ${{ steps.prep.outputs.apk_name }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          [ -n "$CALLBACK_TOKEN" ] || { echo "::error::Secret CALLBACK_TOKEN manquant."; exit 1; }
+          CERT=$(grep -m1 'SHA-256' work/certs.txt | awk '{print $NF}')
+          export CERT
+          QUERY=$(python3 -c 'import os, urllib.parse as u; print(u.urlencode({"job": os.environ["JOB_ID"], "name": os.environ["APK_NAME"], "cert": os.environ["CERT"], "run": os.environ["RUN_URL"]}))')
+          curl -fsS --retry 3 -X POST \
+            -H "Authorization: Bearer $CALLBACK_TOKEN" \
+            -H "Content-Type: application/vnd.android.package-archive" \
+            --data-binary "@out/$APK_NAME" \
+            "$SITE_URL/api/runner/upload?$QUERY" -o /dev/null -w "Site : HTTP %{http_code}\n"
+
+      - name: Prévenir le site de l'échec
+        if: failure() && inputs.job_id != ''
+        env:
+          CALLBACK_TOKEN: ${{ secrets.CALLBACK_TOKEN }}
+          JOB_ID: ${{ inputs.job_id }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          MSG=$(grep -h '::error::' work/*.log 2>/dev/null | head -3 | sed 's/::error:://')
+          QUERY=$(python3 -c 'import os, urllib.parse as u; print(u.urlencode({"job": os.environ["JOB_ID"], "status": "failed", "run": os.environ["RUN_URL"]}))')
+          printf '%s' "${MSG:-La fabrication a échoué : voir le détail sur GitHub.}" | curl -sS -X POST \
+            -H "Authorization: Bearer $CALLBACK_TOKEN" -H "Content-Type: text/plain; charset=utf-8" \
+            --data-binary @- \
+            "$SITE_URL/api/runner/upload?$QUERY" -o /dev/null || true
 
       - name: Nettoyer la clé
         if: always()

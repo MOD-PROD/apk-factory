@@ -35,6 +35,7 @@ self.addEventListener("fetch", e => {
   const url = new URL(req.url);
   if(url.origin !== location.origin) return;                   // polices Google, annuaire… : le navigateur gère
   if(url.pathname.endsWith("/config-site.json")) return;       // toujours en direct (cache géré par l'appli)
+  if(url.pathname.startsWith("/api/")) return;                // fabrique : toujours en direct, jamais en cache
 
   // Pages : réseau d'abord, cache en secours (hors ligne)
   if(req.mode === "navigate"){

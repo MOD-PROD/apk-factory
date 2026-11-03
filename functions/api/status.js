@@ -1,0 +1,59 @@
+// POST /api/status  { job } — où en est la fabrication.
+// Réponse : { job, status: queued|running|done|failed, step, runUrl, apk: {name, size, url}, error }
+// POST (et pas GET) : le service worker ne met jamais ces réponses en cache.
+
+import { json, site, repo, gh, readJob, writeJob, WORKFLOW } from "../_shared.js";
+
+function publicView(env, j) {
+  const out = {
+    job: j.job, status: j.status, appName: j.appName, packageName: j.packageName,
+    versionName: j.versionName, versionCode: j.versionCode, createdAt: j.createdAt,
+    runUrl: j.runUrl || null, error: j.error || null, step: j.step || null,
+  };
+  if (j.status === "done" && j.apkName) {
+    out.apk = {
+      name: j.apkName, size: j.apkSize || null, sha256: j.certSha256 || null,
+      url: `${site(env)}/api/runner/dl?job=${j.job}&k=${j.dlKey}`,
+    };
+  }
+  return out;
+}
+
+// Retrouve le run GitHub de la tâche (son titre commence par « [job] »).
+async function findRun(env, job) {
+  const r = await gh(env, `/repos/${repo(env)}/actions/workflows/${WORKFLOW}/runs?event=workflow_dispatch&per_page=30`);
+  if (!r.ok) return null;
+  const d = await r.json();
+  return (d.workflow_runs || []).find(w => (w.display_title || "").includes(`[${job}]`)) || null;
+}
+
+export async function onRequestPost({ request, env }) {
+  let body = {};
+  try { body = await request.json(); } catch { /* vide */ }
+  const j = await readJob(env, body.job);
+  if (!j) return json({ error: "Tâche inconnue." }, 404);
+
+  if (j.status === "queued" || j.status === "running") {
+    const run = env.GITHUB_TOKEN ? await findRun(env, j.job) : null;
+    if (run) {
+      j.runId = run.id;
+      j.runUrl = run.html_url;
+      if (run.status === "completed") {
+        // Le workflow renvoie l'APK juste avant de finir : sans retour, c'est un échec.
+        if (run.conclusion !== "success") {
+          j.status = "failed";
+          j.error = j.error || (run.conclusion === "cancelled" ? "Fabrication annulée." : "La fabrication a échoué : voir le détail sur GitHub.");
+        }
+      } else {
+        j.status = "running";
+        j.step = run.status === "in_progress" ? "Fabrication en cours" : "En attente d'une machine GitHub";
+      }
+      await writeJob(env, j);
+    } else if (Date.now() - Date.parse(j.createdAt) > 10 * 60 * 1000) {
+      j.status = "failed";
+      j.error = "Aucun run GitHub trouvé pour cette tâche après 10 minutes.";
+      await writeJob(env, j);
+    }
+  }
+  return json(publicView(env, j));
+}
