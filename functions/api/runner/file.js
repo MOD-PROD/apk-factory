@@ -1,5 +1,5 @@
-// GET /api/runner/file?job=…&name=banner.png|icon.png
-// Lu par GitHub Actions pour récupérer les images envoyées. Hors Cloudflare Access :
+// GET /api/runner/file?job=…&name=banner.png|icon.png|index.html|app.zip|config.js
+// Lu par GitHub Actions pour récupérer les fichiers envoyés depuis le site. Hors Cloudflare Access :
 // protégé par l'en-tête « Authorization: Bearer <CALLBACK_TOKEN> » (rien de secret dans l'adresse,
 // donc rien dans les journaux publics des runs). Les images sont effacées après la fabrication.
 
@@ -16,5 +16,6 @@ export async function onRequestGet({ request, env }) {
   if (!j || !(j.files || []).includes(name)) return new Response("Introuvable", { status: 404 });
   const o = await env.FILES.get(`jobs/${j.job}/${name}`);
   if (!o) return new Response("Introuvable", { status: 404 });
-  return new Response(o.body, { headers: { "content-type": "image/png", "cache-control": "no-store" } });
+  const type = name.endsWith(".png") ? "image/png" : "application/octet-stream";
+  return new Response(o.body, { headers: { "content-type": type, "cache-control": "no-store" } });
 }

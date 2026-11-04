@@ -4,7 +4,18 @@
 
 import { json, site, repo, gh, newJobId, randomHex, writeJob, checkPackage, pngSize, WORKFLOW, SIGNING } from "../_shared.js";
 
-const MAX_IMAGE = 2 * 1024 * 1024; // 2 Mo par image
+const MAX_IMAGE = 2 * 1024 * 1024;    // 2 Mo par image
+const MAX_BUNDLE = 30 * 1024 * 1024;  // 30 Mo pour la page / l'archive de l'appli
+
+// Fichier envoyé (page, archive, config) : { buf, zip } ou null.
+async function upload(form, name, label, errors, max) {
+  const f = form.get(name);
+  if (!f || typeof f === "string" || !f.size) return null;
+  if (f.size > max) { errors.push(`${label} : ${Math.round(max / 1048576)} Mo maximum.`); return null; }
+  const buf = await f.arrayBuffer();
+  const b = new Uint8Array(buf, 0, Math.min(4, buf.byteLength));
+  return { buf, zip: b[0] === 0x50 && b[1] === 0x4b && b[2] === 0x03 && b[3] === 0x04 };
+}
 
 function text(form, name, max = 300) {
   const v = form.get(name);
@@ -52,8 +63,8 @@ export async function onRequestPost({ request, env }) {
 
   const type = text(form, "type", 20);
   const errors = [];
-  if (!["atv", "site-web"].includes(type)) errors.push("Type d'appli indisponible pour l'instant.");
-  const isTv = type === "atv";
+  if (!["atv", "site-web", "html"].includes(type)) errors.push("Type d'appli indisponible pour l'instant.");
+  const isTv = type === "atv", isHtml = type === "html";
 
   const appName = text(form, "appName", 50);
   const packageName = text(form, "packageName", 150);
@@ -82,11 +93,21 @@ export async function onRequestPost({ request, env }) {
     }
   }
 
-  // Site web
-  const webUrl = isTv ? "" : text(form, "webUrl", 2000);
-  let reglages = {};
+  // Site web / fichiers HTML
+  const webUrl = isTv || isHtml ? "" : text(form, "webUrl", 2000);
+  let reglages = {}, bundle = null, config = null;
+  if (isHtml) {
+    bundle = await upload(form, "bundle", "Page HTML / archive .zip", errors, MAX_BUNDLE);
+    if (bundle && !bundle.zip && !/<html|<!doctype/i.test(new TextDecoder().decode(bundle.buf.slice(0, 4096)))) {
+      errors.push("Le fichier n'est ni une page .html ni une archive .zip.");
+      bundle = null;
+    }
+    config = await upload(form, "config", "config.js", errors, 1024 * 1024);
+    if (!bundle && !errors.length) errors.push("Page .html ou archive .zip obligatoire.");
+  }
   if (!isTv) {
-    if (!webUrl) errors.push("Adresse du site obligatoire.");
+    if (isHtml) { /* pas d'adresse */ }
+    else if (!webUrl) errors.push("Adresse du site obligatoire.");
     else {
       try {
         const u = new URL(webUrl);
@@ -107,12 +128,15 @@ export async function onRequestPost({ request, env }) {
 
   if (banner) await env.FILES.put(`jobs/${job}/banner.png`, banner, { httpMetadata: { contentType: "image/png" } });
   if (icon) await env.FILES.put(`jobs/${job}/icon.png`, icon, { httpMetadata: { contentType: "image/png" } });
+  const bundleName = bundle ? (bundle.zip ? "app.zip" : "index.html") : null;
+  if (bundle) await env.FILES.put(`jobs/${job}/${bundleName}`, bundle.buf);
+  if (config) await env.FILES.put(`jobs/${job}/config.js`, config.buf);
 
   const data = {
     job, type, status: "queued", createdAt: new Date().toISOString(), signing: SIGNING,
     appName, packageName, versionName, versionCode: +versionCode,
-    ...(isTv ? { mode, targetUrl, targetApk, isGame } : { webUrl, reglages }),
-    dlKey, files: [banner && "banner.png", icon && "icon.png"].filter(Boolean),
+    ...(isTv ? { mode, targetUrl, targetApk, isGame } : { webUrl, reglages, bundleName, bundleSize: bundle ? bundle.buf.byteLength : 0 }),
+    dlKey, files: [banner && "banner.png", icon && "icon.png", bundleName, config && "config.js"].filter(Boolean),
   };
   await writeJob(env, data);
 
@@ -123,7 +147,8 @@ export async function onRequestPost({ request, env }) {
       atv_mode: mode, atv_target_url: mode === "apk" ? "" : targetUrl, atv_target_apk: mode === "url" ? "" : targetApk,
       atv_is_game: isGame ? "true" : "false", banner_url: banner ? base + "banner.png" : "",
     } : {
-      web_url: webUrl, reglages: Object.keys(reglages).length ? JSON.stringify(reglages) : "",
+      reglages: Object.keys(reglages).length ? JSON.stringify(reglages) : "",
+      ...(isHtml ? { html_url: base + bundleName, config_url: config ? base + "config.js" : "" } : { web_url: webUrl }),
     }),
   };
   const r = await gh(env, `/repos/${repo(env)}/actions/workflows/${WORKFLOW}/dispatches`, {

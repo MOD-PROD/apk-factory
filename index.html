@@ -140,6 +140,7 @@ details.more summary{cursor:pointer;color:var(--texte2);margin-bottom:10px}
 .colors input[type=color]{width:46px;height:32px;padding:0;border:1px solid var(--bord);border-radius:6px;background:none}
 .colors input[type=color]:disabled{opacity:.35}
 .hint{display:block;color:var(--texte2);font-size:13px}
+.fname{color:var(--texte2);font-size:14px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 a.btn{text-decoration:none}
 
 /* ---- Suivi et résultat ---- */
@@ -893,10 +894,10 @@ a.btn{text-decoration:none}
       <div class="types">
         <button class="type" type="button" data-open="atv"><span class="ti">📺</span>
           <span><b>Lanceur Android TV</b><small>Une tuile sur l'accueil de la TV qui ouvre un lien ou une appli</small></span></button>
-        <button class="type" type="button" data-open="web"><span class="ti">🌐</span>
+        <button class="type" type="button" data-open="web" data-source="web"><span class="ti">🌐</span>
           <span><b>Site web</b><small>Un site en appli Android, avec son icône et ses réglages</small></span></button>
-        <button class="type" type="button" disabled><span class="ti">📄</span>
-          <span><b>Appli HTML</b><small>Bientôt</small></span></button>
+        <button class="type" type="button" data-open="web" data-source="html"><span class="ti">📄</span>
+          <span><b>Appli HTML</b><small>Ta page .html ou ton .zip, intégrés dans l'APK, hors ligne</small></span></button>
         <button class="type" type="button" disabled><span class="ti">🎮</span>
           <span><b>Appli HTML pour TV</b><small>Bientôt</small></span></button>
       </div>
@@ -985,13 +986,33 @@ a.btn{text-decoration:none}
   <!-- ===== Écran « Site web » ===== -->
   <section data-page="web" hidden>
     <form class="card" id="webForm" novalidate>
-      <h2>Site web</h2>
-      <p>Transforme un site en appli Android : il s'ouvre en plein écran, sans barre d'adresse.</p>
+      <h2 id="webTitle">Appli Android</h2>
+
+      <div class="field"><span>Contenu de l'appli</span>
+        <div class="seg" role="radiogroup">
+          <label><input type="radio" name="source" value="web" checked><span>🌐 Site web</span></label>
+          <label><input type="radio" name="source" value="html"><span>📄 Fichiers HTML</span></label>
+        </div></div>
 
       <label class="field"><span>Nom de l'appli</span>
         <input type="text" name="appName" id="webName" maxlength="50" required autocomplete="off" placeholder="QuantiX 3D"></label>
 
-      <label class="field"><span>Adresse du site</span>
+      <div class="field" id="fHtml" hidden><span>Page .html ou archive .zip</span>
+        <div class="pick">
+          <label class="btn ghost">Choisir le fichier<input type="file" accept=".html,.htm,.zip,text/html,application/zip" id="htmlFile" hidden></label>
+          <span class="fname" id="htmlName">Aucun fichier</span>
+        </div>
+        <small>Un .zip garde tes images, CSS et JS. La page de départ est index.html, sinon le premier .html. 30 Mo maximum.</small></div>
+
+      <div class="field" id="fCfg" hidden><span>Fichier config.js <small style="display:inline">(facultatif)</small></span>
+        <div class="pick">
+          <label class="btn ghost">Choisir<input type="file" accept=".js,text/javascript" id="cfgFile" hidden></label>
+          <span class="fname" id="cfgName">Aucun</span>
+          <button class="btn ghost" type="button" id="cfgClear" hidden>Retirer</button>
+        </div>
+        <small>Configuration window.APP_CONFIG du modèle ModProd.</small></div>
+
+      <label class="field" id="fWeb"><span>Adresse du site</span>
         <input type="url" name="webUrl" maxlength="2000" autocomplete="off" inputmode="url" placeholder="https://quantix3d.modprod.app/">
         <small>https:// obligatoire. Les liens du site restent dans l'appli ; mailto:, tel:… ouvrent l'appli Android correspondante.</small></label>
 
@@ -1003,7 +1024,7 @@ a.btn{text-decoration:none}
             <button class="btn ghost" type="button" id="webIconClear" hidden>Retirer</button>
           </div>
         </div>
-        <small>Sans image, l'icône du site est récupérée automatiquement (manifest, apple-touch-icon…).</small></div>
+        <small id="iconHint">Sans image, l'icône du site est récupérée automatiquement (manifest, apple-touch-icon…).</small></div>
 
       <div class="field"><span>Orientation</span>
         <div class="seg" role="radiogroup">
@@ -1388,19 +1409,53 @@ atvForm.addEventListener("submit", async e => {
   send(fd, {type: "atv", name, pkg, errBox: $("#atvErrs"), btn: $("#atvGo")});
 });
 
+/* Site web ou fichiers HTML */
+const MAX_BUNDLE = 30 * 1024 * 1024;
+const files = {html: null, cfg: null};
+function syncSource(){
+  const html = webForm.source.value === "html";
+  $("#fWeb").hidden = html; $("#fHtml").hidden = !html; $("#fCfg").hidden = !html;
+  $("#iconHint").textContent = html ? "Sans image, l'icône de base est gardée. Recadrée en 512 × 512 PNG."
+                                    : "Sans image, l'icône du site est récupérée automatiquement (manifest, apple-touch-icon…).";
+}
+webForm.querySelectorAll("input[name=source]").forEach(r => r.addEventListener("change", syncSource));
+syncSource();
+function fileLabel(f){
+  const n = f.size < 1048576 ? Math.max(1, Math.round(f.size / 1024)) + " Ko" : (f.size / 1048576).toFixed(1).replace(".", ",") + " Mo";
+  return f.name + " · " + n;
+}
+$("#htmlFile").addEventListener("change", e => {
+  const f = e.target.files && e.target.files[0]; e.target.value = "";
+  if(!f) return;
+  if(!/\.(html?|zip)$/i.test(f.name)){ alert("Choisis un fichier .html ou .zip."); return; }
+  if(f.size > MAX_BUNDLE){ alert("Fichier trop gros (30 Mo maximum)."); return; }
+  files.html = f; $("#htmlName").textContent = fileLabel(f);
+});
+$("#cfgFile").addEventListener("change", e => {
+  const f = e.target.files && e.target.files[0]; e.target.value = "";
+  if(!f) return;
+  if(f.size > 1048576){ alert("config.js : 1 Mo maximum."); return; }
+  files.cfg = f; $("#cfgName").textContent = fileLabel(f); $("#cfgClear").hidden = false;
+});
+$("#cfgClear").addEventListener("click", () => { files.cfg = null; $("#cfgName").textContent = "Aucun"; $("#cfgClear").hidden = true; });
+
 webForm.querySelectorAll("[data-color]").forEach(c => c.addEventListener("change", () => {
   webForm.elements[c.dataset.color].disabled = !c.checked;
 }));
 webForm.addEventListener("submit", e => {
   e.preventDefault();
   const f = webForm, errs = [];
-  const name = f.appName.value.trim(), url = f.webUrl.value.trim();
+  const name = f.appName.value.trim(), url = f.webUrl.value.trim(), isHtml = f.source.value === "html";
   if(!webPkg.value.trim() && name) webPkg.value = slug(name) ? PKG_PREFIX.web + slug(name) : "";
   const pkg = webPkg.value.trim();
   if(!name) errs.push("Nom de l'appli obligatoire.");
-  let okUrl = false;
-  try{ const u = new URL(url); okUrl = u.protocol === "https:" && u.hostname.includes("."); }catch(err){}
-  if(!okUrl) errs.push("Adresse du site : https://… attendue (Android bloque le http:// non chiffré).");
+  if(isHtml){
+    if(!files.html) errs.push("Choisis la page .html ou l'archive .zip de l'appli.");
+  }else{
+    let okUrl = false;
+    try{ const u = new URL(url); okUrl = u.protocol === "https:" && u.hostname.includes("."); }catch(err){}
+    if(!okUrl) errs.push("Adresse du site : https://… attendue (Android bloque le http:// non chiffré).");
+  }
   errs.push(...pkgErrors(pkg));
   if(!/^\d+$/.test(f.versionCode.value) || +f.versionCode.value < 1) errs.push("Code de version : nombre entier à partir de 1.");
   if(errs.some(t => t.startsWith("Nom de package"))) f.querySelector("details.more:last-of-type").open = true;
@@ -1408,10 +1463,13 @@ webForm.addEventListener("submit", e => {
   if(errs.length) return;
 
   const fd = new FormData();
-  fd.append("type", "site-web");
+  fd.append("type", isHtml ? "html" : "site-web");
   fd.append("appName", name);
   fd.append("packageName", pkg);
-  fd.append("webUrl", url);
+  if(isHtml){
+    fd.append("bundle", files.html, files.html.name);
+    if(files.cfg) fd.append("config", files.cfg, "config.js");
+  }else fd.append("webUrl", url);
   fd.append("orientation", f.orientation.value);
   ["fullscreen", "keepScreenOn", "zoom", "camera", "microphone", "location", "blockScreenshots"]
     .forEach(k => fd.append(k, f.elements[k].checked ? "true" : "false"));
@@ -1521,11 +1579,14 @@ function renderHistory(){
     const st = document.createElement("span"); st.className = "st " + (j.status || ""); st.textContent = STATUS_TXT[j.status] || j.status || "";
     const open = document.createElement("button"); open.className = "btn ghost"; open.type = "button"; open.textContent = "Ouvrir";
     open.style.cssText = "min-height:36px;padding:0 10px;font-size:13px";
-    open.addEventListener("click", () => openJob(j.job, j.appName, j.form || (j.type === "site-web" ? "web" : "atv")));
+    open.addEventListener("click", () => openJob(j.job, j.appName, j.form || (j.type === "atv" ? "atv" : "web")));
     li.append(n, st, open); ul.append(li);
   });
 }
-document.querySelectorAll("[data-open]").forEach(b => b.addEventListener("click", () => go(b.dataset.open)));
+document.querySelectorAll("[data-open]").forEach(b => b.addEventListener("click", () => {
+  if(b.dataset.source){ webForm.source.value = b.dataset.source; syncSource(); }
+  go(b.dataset.open);
+}));
 
 /* ---------- Installation (PWA) ---------- */
 let installEvt = null;
