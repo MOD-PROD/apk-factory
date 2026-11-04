@@ -135,6 +135,11 @@ details.more summary{cursor:pointer;color:var(--texte2);margin-bottom:10px}
 .errs{margin:0 0 14px;padding:10px 12px 10px 28px;border-radius:var(--arrondi);color:var(--texte);
   background:color-mix(in srgb,var(--alerte) 15%,var(--surface));border:1px solid color-mix(in srgb,var(--alerte) 50%,transparent)}
 .wide{width:100%}
+.colors .check{justify-content:flex-start}
+.colors .check span{flex:1}
+.colors input[type=color]{width:46px;height:32px;padding:0;border:1px solid var(--bord);border-radius:6px;background:none}
+.colors input[type=color]:disabled{opacity:.35}
+.hint{display:block;color:var(--texte2);font-size:13px}
 a.btn{text-decoration:none}
 
 /* ---- Suivi et résultat ---- */
@@ -892,8 +897,8 @@ a.btn{text-decoration:none}
       <div class="types">
         <button class="type" type="button" data-open="atv"><span class="ti">📺</span>
           <span><b>Lanceur Android TV</b><small>Une tuile sur l'accueil de la TV qui ouvre un lien ou une appli</small></span></button>
-        <button class="type" type="button" disabled><span class="ti">🌐</span>
-          <span><b>Site web</b><small>Bientôt</small></span></button>
+        <button class="type" type="button" data-open="web"><span class="ti">🌐</span>
+          <span><b>Site web</b><small>Un site en appli Android, avec son icône et ses réglages</small></span></button>
         <button class="type" type="button" disabled><span class="ti">📄</span>
           <span><b>Appli HTML</b><small>Bientôt</small></span></button>
         <button class="type" type="button" disabled><span class="ti">🎮</span>
@@ -979,6 +984,80 @@ a.btn{text-decoration:none}
       <button class="btn wide" type="submit" id="atvGo">Fabriquer l'APK</button>
     </form>
 
+  </section>
+
+  <!-- ===== Écran « Site web » ===== -->
+  <section data-page="web" hidden>
+    <form class="card" id="webForm" novalidate>
+      <h2>Site web</h2>
+      <p>Transforme un site en appli Android : il s'ouvre en plein écran, sans barre d'adresse.</p>
+
+      <label class="field"><span>Nom de l'appli</span>
+        <input type="text" name="appName" id="webName" maxlength="50" required autocomplete="off" placeholder="QuantiX 3D"></label>
+
+      <label class="field"><span>Adresse du site</span>
+        <input type="url" name="webUrl" maxlength="2000" autocomplete="off" inputmode="url" placeholder="https://quantix3d.modprod.app/">
+        <small>https:// obligatoire. Les liens du site restent dans l'appli ; mailto:, tel:… ouvrent l'appli Android correspondante.</small></label>
+
+      <div class="field"><span>Icône <small style="display:inline">(carrée)</small></span>
+        <div class="pick">
+          <canvas id="webIconPrev" width="512" height="512" style="width:72px;height:72px"></canvas>
+          <div class="pb">
+            <label class="btn ghost">Choisir une image<input type="file" accept="image/*" id="webIconFile" hidden></label>
+            <button class="btn ghost" type="button" id="webIconClear" hidden>Retirer</button>
+          </div>
+        </div>
+        <small>Sans image, l'icône du site est récupérée automatiquement (manifest, apple-touch-icon…).</small></div>
+
+      <div class="field"><span>Orientation</span>
+        <div class="seg" role="radiogroup">
+          <label><input type="radio" name="orientation" value="portrait" checked><span>Portrait</span></label>
+          <label><input type="radio" name="orientation" value="auto"><span>Suit la rotation</span></label>
+        </div></div>
+
+      <label class="check"><input type="checkbox" name="fullscreen" value="true"><span>Plein écran (masque la barre d'état)</span></label>
+      <label class="check"><input type="checkbox" name="keepScreenOn" value="true"><span>Écran toujours allumé</span></label>
+      <label class="check"><input type="checkbox" name="zoom" value="true"><span>Zoom à deux doigts</span></label>
+
+      <details class="more">
+        <summary>Couleurs</summary>
+        <div class="colors">
+          <label class="check"><input type="checkbox" data-color="barsColor"><span>Barres système</span><input type="color" name="barsColor" value="#141a21" disabled></label>
+          <label class="check"><input type="checkbox" data-color="backgroundColor"><span>Fond au démarrage</span><input type="color" name="backgroundColor" value="#141a21" disabled></label>
+          <label class="check"><input type="checkbox" data-color="accentColor"><span>Accent (fenêtres Android)</span><input type="color" name="accentColor" value="#f08a24" disabled></label>
+        </div>
+        <small class="hint">Non cochée = couleur de base. Barres claires = icônes sombres automatiquement.</small>
+      </details>
+
+      <details class="more">
+        <summary>Autorisations et confidentialité</summary>
+        <label class="check"><input type="checkbox" name="camera" value="true"><span>Caméra (photo depuis un champ fichier, vidéo)</span></label>
+        <label class="check"><input type="checkbox" name="microphone" value="true"><span>Micro</span></label>
+        <label class="check"><input type="checkbox" name="location" value="true"><span>Localisation</span></label>
+        <label class="check"><input type="checkbox" name="blockScreenshots" value="true"><span>Bloquer les captures d'écran</span></label>
+      </details>
+
+      <details class="more">
+        <summary>Options avancées (package, version)</summary>
+        <label class="field"><span>Nom de package</span>
+          <input type="text" name="packageName" id="webPkg" maxlength="150" autocomplete="off" autocapitalize="none" spellcheck="false">
+          <small>Rempli à partir du nom. Garde le même pour mettre à jour une appli déjà installée.</small></label>
+        <div class="row2">
+          <label class="field"><span>Version</span>
+            <input type="text" name="versionName" value="1.0.0" maxlength="50" autocomplete="off"></label>
+          <label class="field"><span>Code de version</span>
+            <input type="number" name="versionCode" value="1" min="1" step="1" inputmode="numeric">
+            <small>+1 à chaque mise à jour</small></label>
+        </div>
+      </details>
+
+      <ul class="errs" id="webErrs" hidden></ul>
+      <button class="btn wide" type="submit" id="webGo">Fabriquer l'APK</button>
+    </form>
+  </section>
+
+  <!-- ===== Écran « Suivi » d'une fabrication ===== -->
+  <section data-page="suivi" hidden>
     <div class="card" id="jobCard" hidden>
       <h2 id="jobTitle">Fabrication</h2>
       <div class="progress" id="jobProgress"><div class="spin"></div><div><b id="jobStep">Envoi…</b><br><small class="mono" id="jobId"></small></div></div>
@@ -986,13 +1065,13 @@ a.btn{text-decoration:none}
         <p id="jobInfo"></p>
         <a class="btn wide" id="jobDl" href="#">Télécharger l'APK</a>
         <div class="qr" id="jobQr"></div>
-        <small>Scanne le QR code, ou tape le lien dans Downloader sur la TV :</small>
+        <small>Scanne le QR code avec le téléphone ou la TV, ou tape le lien dans Downloader :</small>
         <span class="mono" id="jobLink"></span>
         <button class="btn ghost" type="button" id="jobCopy">Copier le lien</button>
       </div>
       <ul class="errs" id="jobErr" hidden></ul>
       <p><a id="jobRun" href="#" target="_blank" rel="noopener" hidden>Voir le détail sur GitHub</a></p>
-      <button class="btn ghost wide" type="button" id="jobNew">Fabriquer un autre lanceur</button>
+      <button class="btn ghost wide" type="button" id="jobNew">Fabriquer une autre appli</button>
     </div>
   </section>
 
@@ -1010,6 +1089,7 @@ a.btn{text-decoration:none}
 <nav class="bottom" id="nav">
   <button data-go="accueil" aria-current="page"><span class="ico">⌂</span>Accueil</button>
   <button data-go="atv"><span class="ico">📺</span>Lanceur TV</button>
+  <button data-go="web"><span class="ico">🌐</span>Site web</button>
   <button data-go="applis"><span class="ico">▦</span>Applis</button>
 </nav>
 
@@ -1227,7 +1307,7 @@ function pkgErrors(pkg){
 }
 
 /* --- Images : recadrées au bon format, en PNG --- */
-const images = {banner: null, icon: null};
+const images = {banner: null, icon: null, webIcon: null};
 function drawCover(canvas, img){
   const c = canvas.getContext("2d"), W = canvas.width, H = canvas.height;
   const s = Math.max(W / img.width, H / img.height), w = img.width * s, h = img.height * s;
@@ -1254,12 +1334,18 @@ function setupPicker(kind){
 }
 setupPicker("banner");
 setupPicker("icon");
+setupPicker("webIcon");
 
-/* --- Formulaire --- */
-const atvForm = $("#atvForm"), atvPkg = $("#atvPkg");
-let pkgTouched = false;
-$("#atvName").addEventListener("input", e => { if(!pkgTouched){ const s = slug(e.target.value); atvPkg.value = s ? "app.modprod.atvlink." + s : ""; } });
-atvPkg.addEventListener("input", () => { pkgTouched = atvPkg.value.trim() !== ""; });
+/* --- Formulaires --- */
+const atvForm = $("#atvForm"), atvPkg = $("#atvPkg"), webForm = $("#webForm"), webPkg = $("#webPkg");
+const PKG_PREFIX = {atv: "app.modprod.atvlink.", web: "app.modprod."};
+function autoPackage(nameInput, pkgInput, prefix){
+  let touched = false;
+  nameInput.addEventListener("input", () => { if(!touched){ const s = slug(nameInput.value); pkgInput.value = s ? prefix + s : ""; } });
+  pkgInput.addEventListener("input", () => { touched = pkgInput.value.trim() !== ""; });
+}
+autoPackage($("#atvName"), atvPkg, PKG_PREFIX.atv);
+autoPackage($("#webName"), webPkg, PKG_PREFIX.web);
 function syncMode(){
   const m = atvForm.mode.value;
   $("#fUrl").hidden = m === "apk";
@@ -1279,7 +1365,7 @@ atvForm.addEventListener("submit", async e => {
   e.preventDefault();
   const f = atvForm, m = f.mode.value, errs = [];
   const name = f.appName.value.trim(), url = f.targetUrl.value.trim(), apk = f.targetApk.value.trim();
-  if(!atvPkg.value.trim() && name) atvPkg.value = slug(name) ? "app.modprod.atvlink." + slug(name) : "";
+  if(!atvPkg.value.trim() && name) atvPkg.value = slug(name) ? PKG_PREFIX.atv + slug(name) : "";
   const pkg = atvPkg.value.trim();
   if(!name) errs.push("Nom du lanceur obligatoire.");
   errs.push(...pkgErrors(pkg));
@@ -1303,31 +1389,67 @@ atvForm.addEventListener("submit", async e => {
   if(images.banner) fd.append("banner", images.banner, "banner.png");
   if(images.icon) fd.append("icon", images.icon, "icon.png");
 
-  const go_ = $("#atvGo");
-  go_.disabled = true; go_.textContent = "Envoi…";
+  send(fd, {type: "atv", name, pkg, errBox: $("#atvErrs"), btn: $("#atvGo")});
+});
+
+webForm.querySelectorAll("[data-color]").forEach(c => c.addEventListener("change", () => {
+  webForm.elements[c.dataset.color].disabled = !c.checked;
+}));
+webForm.addEventListener("submit", e => {
+  e.preventDefault();
+  const f = webForm, errs = [];
+  const name = f.appName.value.trim(), url = f.webUrl.value.trim();
+  if(!webPkg.value.trim() && name) webPkg.value = slug(name) ? PKG_PREFIX.web + slug(name) : "";
+  const pkg = webPkg.value.trim();
+  if(!name) errs.push("Nom de l'appli obligatoire.");
+  let okUrl = false;
+  try{ const u = new URL(url); okUrl = u.protocol === "https:" && u.hostname.includes("."); }catch(err){}
+  if(!okUrl) errs.push("Adresse du site : https://… attendue (Android bloque le http:// non chiffré).");
+  errs.push(...pkgErrors(pkg));
+  if(!/^\d+$/.test(f.versionCode.value) || +f.versionCode.value < 1) errs.push("Code de version : nombre entier à partir de 1.");
+  if(errs.some(t => t.startsWith("Nom de package"))) f.querySelector("details.more:last-of-type").open = true;
+  showErrors($("#webErrs"), errs);
+  if(errs.length) return;
+
+  const fd = new FormData();
+  fd.append("type", "site-web");
+  fd.append("appName", name);
+  fd.append("packageName", pkg);
+  fd.append("webUrl", url);
+  fd.append("orientation", f.orientation.value);
+  ["fullscreen", "keepScreenOn", "zoom", "camera", "microphone", "location", "blockScreenshots"]
+    .forEach(k => fd.append(k, f.elements[k].checked ? "true" : "false"));
+  f.querySelectorAll("[data-color]").forEach(c => { if(c.checked) fd.append(c.dataset.color, f.elements[c.dataset.color].value); });
+  fd.append("versionName", f.versionName.value.trim() || "1.0.0");
+  fd.append("versionCode", f.versionCode.value);
+  if(images.webIcon) fd.append("icon", images.webIcon, "icon.png");
+  send(fd, {type: "web", name, pkg, errBox: $("#webErrs"), btn: $("#webGo")});
+});
+
+async function send(fd, o){
+  o.btn.disabled = true; o.btn.textContent = "Envoi…";
   try{
     const r = await fetch("api/build", {method: "POST", body: fd, credentials: "same-origin"});
     const d = await r.json().catch(() => ({}));
     if(!r.ok || !d.job){
-      showErrors($("#atvErrs"), d.errors || [d.error || `Erreur ${r.status} : réessaie dans un moment.`]);
-      if(d.job) remember({job: d.job, appName: name, status: "failed"});
+      showErrors(o.errBox, d.errors || [d.error || `Erreur ${r.status} : réessaie dans un moment.`]);
+      if(d.job) remember({job: d.job, appName: o.name, form: o.type, status: "failed"});
       return;
     }
-    remember({job: d.job, appName: name, packageName: pkg, status: "queued", createdAt: new Date().toISOString()});
-    openJob(d.job, name);
+    remember({job: d.job, appName: o.name, packageName: o.pkg, form: o.type, status: "queued", createdAt: new Date().toISOString()});
+    openJob(d.job, o.name, o.type);
   }catch(err){
-    showErrors($("#atvErrs"), ["Pas de connexion avec le site. Vérifie ta connexion et réessaie."]);
+    showErrors(o.errBox, ["Pas de connexion avec le site. Vérifie ta connexion et réessaie."]);
   }finally{
-    go_.disabled = false; go_.textContent = "Fabriquer l'APK";
+    o.btn.disabled = false; o.btn.textContent = "Fabriquer l'APK";
   }
-});
+}
 
 /* --- Suivi d'une fabrication --- */
-let pollTimer = null, currentJob = null;
-function openJob(job, name){
-  currentJob = job;
-  go("atv");
-  atvForm.hidden = true;
+let pollTimer = null, currentJob = null, currentForm = "atv";
+function openJob(job, name, form){
+  currentJob = job; currentForm = form || "atv";
+  go("suivi");
   const c = $("#jobCard"); c.hidden = false;
   $("#jobTitle").textContent = name || "Fabrication";
   $("#jobId").textContent = "Tâche " + job;
@@ -1347,7 +1469,7 @@ async function poll(job, started){
   if(job !== currentJob) return;
   if(d){
     if(d.runUrl){ const a = $("#jobRun"); a.href = d.runUrl; a.hidden = false; }
-    remember({job, status: d.status, appName: d.appName, packageName: d.packageName});
+    remember({job, status: d.status, appName: d.appName, packageName: d.packageName, type: d.type});
     if(d.status === "done" && d.apk){ showResult(d); return; }
     if(d.status === "failed"){ showJobError([d.error || "La fabrication a échoué."]); return; }
     const sec = Math.round((Date.now() - started) / 1000);
@@ -1379,8 +1501,8 @@ $("#jobCopy").addEventListener("click", async () => {
 });
 $("#jobNew").addEventListener("click", () => {
   currentJob = null; clearTimeout(pollTimer);
-  $("#jobCard").hidden = true; atvForm.hidden = false; $("#atvErrs").hidden = true;
-  scrollTo(0, 0);
+  $("#atvErrs").hidden = true; $("#webErrs").hidden = true;
+  go(currentForm);
 });
 
 /* --- Historique (sur cet appareil) --- */
@@ -1403,7 +1525,7 @@ function renderHistory(){
     const st = document.createElement("span"); st.className = "st " + (j.status || ""); st.textContent = STATUS_TXT[j.status] || j.status || "";
     const open = document.createElement("button"); open.className = "btn ghost"; open.type = "button"; open.textContent = "Ouvrir";
     open.style.cssText = "min-height:36px;padding:0 10px;font-size:13px";
-    open.addEventListener("click", () => openJob(j.job, j.appName));
+    open.addEventListener("click", () => openJob(j.job, j.appName, j.form || (j.type === "site-web" ? "web" : "atv")));
     li.append(n, st, open); ul.append(li);
   });
 }
@@ -1424,7 +1546,7 @@ $("#ver").textContent = "· v" + APP.version;
 renderHistory();
 $("#hver").textContent = "v" + APP.version;
 // Menus réglés dans AppMod (config-site.json → menus). Nouvelle appli : déclarer ici ses écrans (mêmes identifiants que menuActions dans AppMod).
-const MENU_ACTIONS = [{id: "accueil", label: "Accueil", icon: "home"}, {id: "atv", label: "Lanceur TV", icon: "box"}, {id: "applis", label: "Applis", icon: "grid"}].map(a => Object.assign(a, {el: '#nav [data-go="' + a.id + '"]',
+const MENU_ACTIONS = [{id: "accueil", label: "Accueil", icon: "home"}, {id: "atv", label: "Lanceur TV", icon: "box"}, {id: "web", label: "Site web", icon: "globe"}, {id: "applis", label: "Applis", icon: "grid"}].map(a => Object.assign(a, {el: '#nav [data-go="' + a.id + '"]',
   run: () => go(a.id), active: () => { const b = document.querySelector('#nav [data-go="' + a.id + '"]'); return !!(b && b.hasAttribute("aria-current")); }}));
 ModProdMenu.init({config: MP.config.menus, assets: /(^|\.)modprod\.app$/.test(location.hostname) ? "" : APP.site, actions: MENU_ACTIONS, native: ["#nav"], topAfter: "header.top",
   // En-tête réglé dans AppMod (config-site.json → header.layout) : éléments de l'appli placés dans l'en-tête

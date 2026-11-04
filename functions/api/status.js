@@ -6,7 +6,7 @@ import { json, site, repo, gh, readJob, writeJob, WORKFLOW } from "../_shared.js
 
 function publicView(env, j) {
   const out = {
-    job: j.job, status: j.status, appName: j.appName, packageName: j.packageName,
+    job: j.job, type: j.type, status: j.status, appName: j.appName, packageName: j.packageName,
     versionName: j.versionName, versionCode: j.versionCode, createdAt: j.createdAt,
     runUrl: j.runUrl || null, error: j.error || null, step: j.step || null,
   };
