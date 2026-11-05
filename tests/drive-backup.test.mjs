@@ -11,7 +11,7 @@ const json = (value, init = {}) => new Response(JSON.stringify(value), {
   headers: { "Content-Type": "application/json", ...(init.headers || {}) }
 });
 
-function mocks({ wrongSize = false, googleFailure = false } = {}) {
+function mocks({ wrongSize = false, googleFailure = false, payload = DATA } = {}) {
   const requests = [];
   const oldFetch = globalThis.fetch, oldGoogle = globalThis.google;
   globalThis.google = {
@@ -33,7 +33,7 @@ function mocks({ wrongSize = false, googleFailure = false } = {}) {
     }
     if (target === APK_URL) {
       assert.ok(!options.headers?.Authorization, "OAuth token should not reach Cloudflare");
-      return new Response(DATA, { headers: { "Content-Type": "application/vnd.android.package-archive" } });
+      return new Response(payload, { headers: { "Content-Type": "application/vnd.android.package-archive" } });
     }
     assert.equal(options.headers?.Authorization, "Bearer test-oauth-token");
     if (target.includes("uploadType=resumable") && options.method === "POST") {
@@ -43,12 +43,19 @@ function mocks({ wrongSize = false, googleFailure = false } = {}) {
     }
     if (target.includes("upload_id=mock") && options.method === "PUT") {
       if (googleFailure) return json({ error: { message: "Upload refused" } }, { status: 500 });
-      assert.equal(options.body.size, DATA.length);
+      assert.ok(options.body.size <= 8 * 1024 * 1024);
+      assert.match(options.headers["Content-Range"], /^bytes \\d+-\\d+\\/\\d+$/);
+      const header = options.headers["Content-Range"];
+      const match = /^bytes (\\d+)-(\\d+)\\/(\\d+)$/.exec(header);
+      const end = Number(match[2]);
+      if (end + 1 < payload.length) {
+        return new Response(null, { status: 308, headers: { Range: "bytes=0-" + end } });
+      }
       return json({ id: "apk-123" });
     }
     if (target.includes("/apk-123?")) {
       return json({
-        id: "apk-123", name: NAME, size: wrongSize ? "7" : "8",
+        id: "apk-123", name: NAME, size: String(payload.length - (wrongSize ? 1 : 0)),
         parents: ["folder-apkfactory"], webViewLink: "https://drive.google.com/file/d/apk-123/view"
       });
     }
@@ -92,5 +99,22 @@ test("backup reports Drive error and leaves temporary APK untouched", async () =
   try {
     await assert.rejects(saveApkToGoogleDrive({ name: NAME, url: APK_URL, size: DATA.length }), /HTTP 500/);
     assert.ok(!mock.requests.some(r => r.url.includes("delete") || r.options.method === "DELETE"));
+  } finally { mock.restore(); }
+});
+
+
+test("large APK uploads in independently acknowledged 8 MiB chunks", async () => {
+  const payload = new Uint8Array(8 * 1024 * 1024 + 37);
+  payload.set([80, 75, 3, 4]);
+  const mock = mocks({ payload });
+  try {
+    const saved = await saveApkToGoogleDrive({ name: NAME, url: APK_URL, size: payload.length });
+    assert.equal(saved.id, "apk-123");
+    const chunks = mock.requests.filter(req => req.options.method === "PUT");
+    assert.equal(chunks.length, 2);
+    assert.equal(chunks[0].options.body.size, 8 * 1024 * 1024);
+    assert.equal(chunks[1].options.body.size, 37);
+    assert.equal(chunks[1].options.headers["Content-Range"],
+      "bytes " + (8 * 1024 * 1024) + "-" + (payload.length - 1) + "/" + payload.length);
   } finally { mock.restore(); }
 });
