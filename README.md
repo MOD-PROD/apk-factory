@@ -129,3 +129,30 @@ d'identité et des politiques d'accès cohérentes. Chaque application possède
 son propre AUD ; la réutilisation de la session de l'identité dépend des règles
 Zero Trust et ne se déduit pas du catalogue ModProd. Tester la navigation
 Dashboard → APK Factory avec un compte autorisé avant de déclarer le SSO validé.
+
+
+## Intégrations dans la suite ModProd
+
+APK Factory conserve son moteur GitHub Actions + Morphe + Cloudflare R2 :
+les intégrations n'introduisent ni comptes supplémentaires ni base de données.
+
+- **Dashboard** : fiche officielle sur
+  `https://dashboard.modprod.app/applications/apk-factory` ;
+  raccourcis vers « Créer un APK », AppMod et les builds GitHub Actions.
+- **AppMod** : l'application est décrite dans
+  `MOD-PROD/appmod/data/apps.json` avec les quatre actions de menu
+  `accueil`, `atv`, `web` et `applis`, alignées sur `MENU_ACTIONS`.
+  Les fonctions visuelles `atv`, `siteWeb` et `html` sont exposées
+  dans la matrice des réglages ; l'interface respecte leurs états.
+  Ces réglages d'interface **ne constituent pas** une autorisation serveur.
+- **Cloudflare Access** : la connexion relève de la même équipe et
+  du fournisseur d'identité configurés dans Zero Trust. La route
+  `/api/session` peut vérifier le JWT du domaine APK Factory quand
+  `ACCESS_TEAM` et `ACCESS_AUD` sont configurés. L'API de fabrication
+  requiert alors également le JWT signé. Les politiques et les sessions
+  réelles doivent être confirmées dans le tableau de bord Cloudflare.
+- **Registre central** : entrée `apk-factory` dans
+  `https://modprod.app/modprod.json`, utilisée par le Dashboard.
+
+Les liens vers Dashboard et AppMod dans l'en-tête APK Factory permettent
+de revenir à la suite sans modifier les droits ni partager de jetons.
