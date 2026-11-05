@@ -244,6 +244,27 @@ Google Drive échoue : l'utilisateur conserve son délai normal de téléchargem
 Après 24 h, elle expire selon la politique de rétention, même si l'utilisateur
 n'a pas choisi de sauvegarder. L'interface doit présenter clairement ce délai.
 
+### Limitation de charge Cloudflare et GitHub
+
+Pour éviter des lectures et écritures inutiles sur R2 pendant les builds :
+
+- Le navigateur consulte `/api/status` toutes les **8 secondes**, au lieu
+  de 4 secondes, et suspend ses requêtes lorsque l'onglet est masqué
+  (reprise à la prochaine échéance).
+- Les consultations GitHub et les écritures d'état dans R2 sont limitées
+  à **une fois toutes les 15 secondes par tâche**, tant qu'aucun callback
+  n'a annoncé le résultat final. La notification finale du runner GitHub
+  continue de mettre à jour R2 immédiatement.
+- Le navigateur arrête sa boucle de suivi après 30 minutes. La tâche
+  continue sur GitHub et reste accessible via son historique local tant
+  que la période de 24 heures n'est pas écoulée.
+
+La limitation réduit la consommation lorsque beaucoup de personnes
+fabriquent un APK simultanément, sans nouveau service ni base.
+Le test `tests/status-rate-limit.test.mjs` vérifie que plusieurs
+consultations rapprochées ne déclenchent qu'une seule requête GitHub
+et une seule écriture R2, tout en détectant un APK déjà finalisé.
+
 ### Historique multiappareil facultatif
 
 L'écran d'accueil propose **« Synchroniser l'historique avec Google Drive »**
