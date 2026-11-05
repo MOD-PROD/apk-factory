@@ -17,6 +17,7 @@ import keyword
 import os
 import re
 import shutil
+import stat
 import sys
 import urllib.parse
 import urllib.request
@@ -24,6 +25,8 @@ import zipfile
 from pathlib import Path
 
 MAX_DOWNLOAD = 50 * 1024 * 1024  # 50 Mo par fichier
+MAX_UNPACKED = 100 * 1024 * 1024  # Taille totale décompressée de l'application
+MAX_ARCHIVE_FILES = 2000
 
 # Mots réservés Java (un segment de package ne peut pas en être un).
 JAVA_RESERVED = {
@@ -156,6 +159,38 @@ def get_png(label, url, dest, expect=None):
     return str(p)
 
 
+def validate_html_archive(z, folder):
+    """Valide tous les membres avant toute extraction (Zip Slip, liens, zip bombs)."""
+    root = folder.resolve()
+    entries = z.infolist()
+    if len(entries) > MAX_ARCHIVE_FILES:
+        raise ValueError(f"archive trop volumineuse : plus de {MAX_ARCHIVE_FILES} entrées")
+    total = 0
+    seen = set()
+    for info in entries:
+        name = info.filename
+        target = (root / name).resolve()
+        if target != root and root not in target.parents:
+            raise ValueError(f"chemin dangereux « {name} »")
+        if not name or "\\x00" in name or "\\\\" in name or name.startswith("/"):
+            raise ValueError(f"nom d'entrée dangereux « {name} »")
+        if re.match(r"^[A-Za-z]:", name):
+            raise ValueError(f"chemin Windows dangereux « {name} »")
+        mode = info.external_attr >> 16
+        kind = stat.S_IFMT(mode)
+        if kind not in (0, stat.S_IFREG, stat.S_IFDIR):
+            raise ValueError(f"entrée spéciale interdite « {name} »")
+        if info.flag_bits & 1:
+            raise ValueError(f"entrée chiffrée interdite « {name} »")
+        if target in seen:
+            raise ValueError(f"entrée dupliquée « {name} »")
+        seen.add(target)
+        total += info.file_size
+        if total > MAX_UNPACKED:
+            raise ValueError("archive décompressée supérieure à 100 Mo")
+    return entries
+
+
 def get_html(url, work):
     """Page .html ou archive .zip → dossier prêt pour l'option htmlFolder."""
     check_https("Page HTML / archive .zip", url, required=True)
@@ -172,12 +207,12 @@ def get_html(url, work):
 
     if zipfile.is_zipfile(raw):
         with zipfile.ZipFile(raw) as z:
-            for info in z.infolist():
-                target = (folder / info.filename).resolve()
-                if not str(target).startswith(str(folder.resolve()) + os.sep) and target != folder.resolve():
-                    fail(f"Archive .zip refusée : chemin dangereux « {info.filename} ».")
-                    return None
-            z.extractall(folder)
+            try:
+                validate_html_archive(z, folder)
+                z.extractall(folder)
+            except (ValueError, OSError, zipfile.BadZipFile) as exc:
+                fail(f"Archive .zip refusée : {exc}.")
+                return None
         # Dossier racine unique dans l'archive (MonAppli/index.html) → on descend dedans.
         entries = [e for e in folder.iterdir() if e.name != "__MACOSX"]
         if len(entries) == 1 and entries[0].is_dir():
