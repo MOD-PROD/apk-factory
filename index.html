@@ -1494,10 +1494,10 @@ async function send(fd, o){
     const d = await r.json().catch(() => ({}));
     if(!r.ok || !d.job){
       showErrors(o.errBox, d.errors || [d.error || `Erreur ${r.status} : réessaie dans un moment.`]);
-      if(d.job) remember({job: d.job, appName: o.name, form: o.type, status: "failed"});
+      if(d.job) remember({job: d.job, statusKey: d.statusKey, appName: o.name, form: o.type, status: "failed"});
       return;
     }
-    remember({job: d.job, appName: o.name, packageName: o.pkg, form: o.type, status: "queued", createdAt: new Date().toISOString()});
+    remember({job: d.job, statusKey: d.statusKey, appName: o.name, packageName: o.pkg, form: o.type, status: "queued", createdAt: new Date().toISOString()});
     openJob(d.job, o.name, o.type, d.statusKey);
   }catch(err){
     showErrors(o.errBox, ["Pas de connexion avec le site. Vérifie ta connexion et réessaie."]);
@@ -1525,7 +1525,7 @@ async function poll(job, started){
   if(job !== currentJob) return;
   let d = null;
   try{
-    const r = await fetch("api/status", {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({job}), credentials: "same-origin"});
+    const r = await fetch("api/status", {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({job, statusKey: currentStatusKey}), credentials: "same-origin"});
     d = await r.json().catch(() => null);
     if(r.status === 404){ showJobError(["Tâche introuvable (expirée ?)."]); return; }
   }catch(e){ /* réseau : on réessaie */ }
@@ -1635,7 +1635,7 @@ function renderHistory(){
     const st = document.createElement("span"); st.className = "st " + (j.status || ""); st.textContent = STATUS_TXT[j.status] || j.status || "";
     const open = document.createElement("button"); open.className = "btn ghost"; open.type = "button"; open.textContent = "Ouvrir";
     open.style.cssText = "min-height:36px;padding:0 10px;font-size:13px";
-    open.addEventListener("click", () => openJob(j.job, j.appName, j.form || (j.type === "atv" ? "atv" : "web")));
+    open.addEventListener("click", () => openJob(j.job, j.appName, j.form || (j.type === "atv" ? "atv" : "web"), j.statusKey));
     li.append(n, st, open); ul.append(li);
   });
 }
