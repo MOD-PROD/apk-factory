@@ -123,6 +123,7 @@ export async function onRequestPost({ request, env }) {
 
   const job = newJobId();
   const dlKey = randomHex(16);     // lien de téléchargement de l'APK (QR code)
+  const statusKey = randomHex(24); // accès privé au suivi, distinct de la clé de téléchargement
   // Adresse sans secret : GitHub s'authentifie avec CALLBACK_TOKEN (en-tête), rien ne fuit dans les journaux.
   const base = `${site(env)}/api/runner/file?job=${job}&name=`;
 
@@ -136,7 +137,7 @@ export async function onRequestPost({ request, env }) {
     job, type, status: "queued", createdAt: new Date().toISOString(), signing: SIGNING,
     appName, packageName, versionName, versionCode: +versionCode,
     ...(isTv ? { mode, targetUrl, targetApk, isGame } : { webUrl, reglages, bundleName, bundleSize: bundle ? bundle.buf.byteLength : 0 }),
-    dlKey, files: [banner && "banner.png", icon && "icon.png", bundleName, config && "config.js"].filter(Boolean),
+    dlKey, statusKey, files: [banner && "banner.png", icon && "icon.png", bundleName, config && "config.js"].filter(Boolean),
   };
   await writeJob(env, data);
 
@@ -159,7 +160,7 @@ export async function onRequestPost({ request, env }) {
     data.status = "failed";
     data.error = `GitHub a refusé le lancement (${r.status}). ${detail}`;
     await writeJob(env, data);
-    return json({ job, error: data.error }, 502);
+    return json({ job, statusKey, error: data.error }, 502);
   }
-  return json({ job, status: "queued" });
+  return json({ job, statusKey, status: "queued" });
 }
