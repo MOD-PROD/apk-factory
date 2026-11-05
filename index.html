@@ -1525,6 +1525,16 @@ function openJob(job, name, form, statusKey){
 }
 async function poll(job, started){
   if(job !== currentJob) return;
+  // No requests while the tab is hidden: the signed APK is delivered by
+  // GitHub's callback, independently of this browser.
+  if(document.hidden){
+    pollTimer = setTimeout(() => poll(job, started), 30000);
+    return;
+  }
+  if(Date.now() - started > 30 * 60 * 1000){
+    showJobError(["Suivi interrompu après 30 minutes. Tu peux rouvrir la fabrication depuis l'historique."]);
+    return;
+  }
   let d = null;
   try{
     const r = await fetch("api/status", {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({job, statusKey: currentStatusKey}), credentials: "same-origin"});
@@ -1540,7 +1550,7 @@ async function poll(job, started){
     const sec = Math.round((Date.now() - started) / 1000);
     $("#jobStep").textContent = (d.step || "En attente d'une machine GitHub") + " · " + sec + " s";
   }
-  pollTimer = setTimeout(() => poll(job, started), 4000);
+  pollTimer = setTimeout(() => poll(job, started), 8000);
 }
 function showJobError(list){
   $("#jobProgress").hidden = true;
