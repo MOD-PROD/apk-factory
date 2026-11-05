@@ -171,3 +171,80 @@ export async function saveApkToGoogleDrive(apk) {
   const folder = await findOrCreateFolder("APK Factory", modprod, token);
   return uploadResumable(blob, apk.name, folder, token);
 }
+
+
+/**
+ * Bidirectional manual synchronization of the last APK build metadata.
+ * The statusKey is private user data in their personal Drive, never copied to
+ * ModProd's services. Download keys and Google tokens are never serialized.
+ * Must be called directly from a user click after prepareGoogleDrive().
+ */
+export async function syncHistoryWithGoogleDrive(localHistory) {
+  if (!driveSettings?.clientId) throw new Error("Google Drive n'est pas encore prêt.");
+  const token = await googleToken(driveSettings.clientId);
+  const { mergeHistory, sanitizeHistory } = await import("./history-sync.js");
+  const modprod = await findOrCreateFolder("ModProd", "root", token);
+  const folder = await findOrCreateFolder("APK Factory", modprod, token);
+  const q = new URLSearchParams({
+    q: "'"+folder+"' in parents and name = 'historique.json' and trashed = false",
+    fields: "files(id,name,mimeType,size),nextPageToken",
+    pageSize: "20"
+  });
+  const listed = await driveFetch(DRIVE_API + "?" + q, token);
+  const existing = (await listed.json()).files?.find(f => f.name === "historique.json");
+  let remote = [];
+  if (existing) {
+    const size = Number(existing.size);
+    if (!Number.isFinite(size) || size > 256 * 1024) {
+      throw new Error("L'historique Drive est trop volumineux.");
+    }
+    const download = await driveFetch(
+      DRIVE_API + "/" + encodeURIComponent(existing.id) + "?alt=media", token);
+    const text = await download.text();
+    if (text.length > 256 * 1024) throw new Error("L'historique Drive est trop volumineux.");
+    let manifest;
+    try { manifest = JSON.parse(text); }
+    catch { throw new Error("L'historique Drive est illisible ; aucune donnée remplacée."); }
+    if (manifest?.schema !== "modprod-apk-history-v1" || !Array.isArray(manifest.jobs)) {
+      throw new Error("Format de l'historique Drive inconnu ; aucune donnée remplacée.");
+    }
+    remote = sanitizeHistory(manifest.jobs);
+  }
+  const merged = mergeHistory(localHistory, remote);
+  const manifest = JSON.stringify({ schema: "modprod-apk-history-v1", jobs: merged }, null, 2);
+  const payload = new Blob([manifest], { type: "application/json" });
+  let fileId;
+  if (existing) {
+    const uploaded = await driveFetch(
+      "https://www.googleapis.com/upload/drive/v3/files/"
+      + encodeURIComponent(existing.id) + "?uploadType=media&fields=id,size",
+      token, { method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: payload });
+    fileId = (await uploaded.json()).id;
+  } else {
+    const uploaded = await driveFetch(
+      "https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&fields=id",
+      token, { method: "POST",
+        headers: { "Content-Type": "application/json; charset=UTF-8",
+          "X-Upload-Content-Type": "application/json",
+          "X-Upload-Content-Length": String(payload.size) },
+        body: JSON.stringify({ name: "historique.json", mimeType: "application/json",
+          parents: [folder] }) });
+    const session = uploaded.headers.get("Location");
+    if (!session || !/^https:\/\/(?:[a-z0-9-]+\.)*googleapis\.com\//i.test(session)) {
+      throw new Error("Session Google Drive non disponible.");
+    }
+    const result = await driveFetch(session, token, {
+      method: "PUT", headers: { "Content-Type": "application/json" }, body: payload
+    });
+    fileId = (await result.json()).id;
+  }
+  if (!fileId) throw new Error("Google Drive n'a pas confirmé l'historique.");
+  const confirmed = await driveFetch(DRIVE_API + "/" + encodeURIComponent(fileId)
+    + "?alt=media", token);
+  const text = await confirmed.text();
+  if (text !== manifest) {
+    throw new Error("L'historique sauvegardé n'est pas identique : vérifier Drive.");
+  }
+  return merged;
+}
