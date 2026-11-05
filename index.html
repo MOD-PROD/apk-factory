@@ -1546,16 +1546,19 @@ function showJobError(list){
 function fmtSize(n){ return n ? (n / 1048576).toFixed(1).replace(".", ",") + " Mo" : ""; }
 let driveApk = null;
 let driveSaving = false;
+let driveModule = null;
+let drivePrepared = false;
+let drivePreparationId = 0;
 $("#jobDrive").addEventListener("click", async () => {
-  if(!driveApk || driveSaving) return;
+  if(!driveApk || driveSaving || !drivePrepared || !driveModule) return;
   driveSaving = true;
   const button = $("#jobDrive"), info = $("#jobDriveStatus");
   button.disabled = true;
   button.textContent = "Sauvegarde Google Drive…";
   info.textContent = "Connexion et transfert vers ton Drive en cours. Ne ferme pas cette page.";
   try {
-    const { saveApkToGoogleDrive } = await import("./drive-backup.js");
-    const file = await saveApkToGoogleDrive(driveApk);
+    // No await before requesting OAuth: preserve the direct click user gesture.
+    const file = await driveModule.saveApkToGoogleDrive(driveApk);
     info.textContent = "APK sauvegardé et vérifié sur Google Drive. La copie temporaire reste téléchargeable jusqu'à son expiration.";
     const link = $("#jobDriveLink");
     link.href = file.link;
@@ -1570,9 +1573,25 @@ $("#jobDrive").addEventListener("click", async () => {
 function showResult(d){
   driveApk = d.apk;
   $("#jobDriveLink").hidden = true;
-  $("#jobDriveStatus").textContent = "Sauvegarde facultative dans ModProd / APK Factory.";
-  $("#jobDrive").disabled = false;
-  $("#jobDrive").textContent = "Sauvegarder sur mon Google Drive";
+  const preparationId = ++drivePreparationId;
+  drivePrepared = false;
+  $("#jobDriveStatus").textContent = "Préparation de Google Drive…";
+  $("#jobDrive").disabled = true;
+  $("#jobDrive").textContent = "Connexion Google Drive…";
+  import("./drive-backup.js").then(async module => {
+    driveModule = module;
+    await module.prepareGoogleDrive();
+    if(preparationId !== drivePreparationId) return;
+    drivePrepared = true;
+    $("#jobDriveStatus").textContent = "Sauvegarde facultative dans ModProd / APK Factory.";
+    $("#jobDrive").disabled = false;
+    $("#jobDrive").textContent = "Sauvegarder sur mon Google Drive";
+  }).catch(err => {
+    if(preparationId !== drivePreparationId) return;
+    $("#jobDriveStatus").textContent = err?.message || "Google Drive non disponible.";
+    $("#jobDrive").textContent = "Google Drive indisponible";
+    $("#jobDrive").disabled = true;
+  });
   $("#jobProgress").hidden = true;
   $("#jobResult").hidden = false;
   $("#jobInfo").textContent = `${d.packageName} · v${d.versionName} (${d.versionCode})` + (d.apk.size ? " · " + fmtSize(d.apk.size) : "");
