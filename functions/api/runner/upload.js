@@ -15,6 +15,10 @@ export async function onRequestPost({ request, env }) {
   const u = new URL(request.url);
   const j = await readJob(env, u.searchParams.get("job"));
   if (!j) return json({ error: "Tâche inconnue." }, 404);
+  // Un callback en retard ou rejoué ne doit pas remplacer un résultat final.
+  if (j.status === "done" || j.status === "failed") {
+    return json({ error: "Tâche déjà terminée." }, 409);
+  }
 
   if (u.searchParams.get("status") === "failed") {
     j.status = "failed";
@@ -26,6 +30,8 @@ export async function onRequestPost({ request, env }) {
     const len = +(request.headers.get("content-length") || 0);
     if (len > MAX_APK) return json({ error: "APK trop gros." }, 413);
     const buf = await request.arrayBuffer();
+    // Content-Length peut être absent ou mensonger : contrôler les octets réellement reçus.
+    if (buf.byteLength > MAX_APK) return json({ error: "APK trop gros." }, 413);
     if (!buf.byteLength || new Uint8Array(buf, 0, 2).join() !== "80,75") { // « PK » : archive zip
       return json({ error: "Le fichier reçu n'est pas un APK." }, 400);
     }
