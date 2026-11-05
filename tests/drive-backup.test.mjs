@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { prepareGoogleDrive, saveApkToGoogleDrive } from "../drive-backup.js";
+import { prepareGoogleDrive, saveApkToGoogleDrive, isTrustedDriveUploadUrl } from "../drive-backup.js";
 
 const NAME = "app.modprod.integration-1.0.apk";
 const APK_URL = "https://apk-factory.modprod.app/api/runner/dl?job=20261105-1430-a1b2c3&k=example";
@@ -125,4 +125,18 @@ test("large APK uploads in independently acknowledged 8 MiB chunks", async () =>
     assert.equal(chunks[1].options.headers["Content-Range"],
       "bytes " + (8 * 1024 * 1024) + "-" + (payload.length - 1) + "/" + payload.length);
   } finally { mock.restore(); }
+});
+
+test("OAuth upload session URLs are restricted to actual Google API hosts", () => {
+  assert.equal(isTrustedDriveUploadUrl("https://www.googleapis.com/upload/drive/v3/files?upload_id=ok"), true);
+  assert.equal(isTrustedDriveUploadUrl("https://content.googleapis.com/upload/drive/v3/files?upload_id=ok"), true);
+  for (const url of [
+    "https://evilgoogleapis.com/upload/drive/v3/files",
+    "https://googleapis.com.evil.example/upload/drive/v3/files",
+    "https://www.googleapis.com.evil.example/upload/drive/v3/files",
+    "https://www.googleapis.com@evil.example/upload/drive/v3/files",
+    "http://www.googleapis.com/upload/drive/v3/files",
+    "https://www.googleapis.com:8443/upload/drive/v3/files",
+    "https://www.googleapis.com/not-drive"
+  ]) assert.equal(isTrustedDriveUploadUrl(url), false, url);
 });
