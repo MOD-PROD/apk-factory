@@ -172,7 +172,7 @@ def validate_html_archive(z, folder):
         target = (root / name).resolve()
         if target != root and root not in target.parents:
             raise ValueError(f"chemin dangereux « {name} »")
-        if not name or "\\x00" in name or "\\\\" in name or name.startswith("/"):
+        if not name or "\x00" in name or "\\" in name or name.startswith("/"):
             raise ValueError(f"nom d'entrée dangereux « {name} »")
         if re.match(r"^[A-Za-z]:", name):
             raise ValueError(f"chemin Windows dangereux « {name} »")
