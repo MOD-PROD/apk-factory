@@ -156,3 +156,67 @@ les intégrations n'introduisent ni comptes supplémentaires ni base de données
 
 Les liens vers Dashboard et AppMod dans l'en-tête APK Factory permettent
 de revenir à la suite sans modifier les droits ni partager de jetons.
+
+
+## Sauvegarde facultative Google Drive et rétention R2
+
+Objectif : APK Factory ne conserve pas durablement les APK sur Cloudflare.
+Après fabrication, l'utilisateur a le choix entre le téléchargement direct et
+**« Sauvegarder sur mon Google Drive »**. L'APK est téléchargé **une seule fois**
+par son navigateur depuis R2, puis envoyé **directement du navigateur à Google
+Drive**, sans passage supplémentaire par les Workers de ModProd. Un jeton
+OAuth temporaire est demandé à Google lors d'un clic utilisateur ; il n'est
+jamais inscrit dans R2, dans un cookie ModProd ou dans une URL.
+
+Le dossier de destination est `Mon Drive / ModProd / APK Factory`. La copie
+est considérée réussie uniquement après relecture auprès de Google Drive
+des métadonnées `id`, `name`, `size` et `parents`.
+
+### Configuration Google nécessaire
+
+1. Dans Google Cloud, activer **Google Drive API**, configurer l'écran de
+   consentement OAuth et créer un **OAuth Client ID de type application Web**.
+2. Ajouter `https://apk-factory.modprod.app` aux origines JavaScript
+   autorisées du client OAuth. Configurer les utilisateurs de test si Google
+   impose un mode de test ; la publication/vérification OAuth dépend de
+   la configuration Google Cloud du projet.
+3. Cloudflare Pages, projet APK Factory → Variables : renseigner
+   `GOOGLE_DRIVE_CLIENT_ID` avec cet ID **public** (forme
+   `123456-xxxxx.apps.googleusercontent.com`). Redéployer Pages.
+   **Ne pas** créer ni exposer un secret client pour l'application navigateur.
+4. Tester manuellement la génération d'un APK, cliquer « Sauvegarder sur mon
+   Google Drive », consentir à `drive.file` et vérifier le fichier sur Drive.
+
+En absence d'ID OAuth, le bouton explique que Drive n'est pas encore
+configuré. Le téléchargement direct reste disponible. Le scope `drive.file`
+limite l'application aux fichiers qu'elle crée ou que l'utilisateur choisit
+explicitement ; aucun accès général à tout le Drive n'est demandé.
+
+### Rétention de 24 heures : deux couches
+
+- **Code APK Factory** : les tâches créées depuis au moins 24 heures ne
+  permettent plus la consultation des métadonnées ni le téléchargement via
+  `/api/runner/dl`. Le code **ne supprime pas à lui seul** les octets R2.
+- **Cloudflare R2** : ajouter **une règle de cycle de vie** sur le bucket lié
+  `FILES`, uniquement sur le préfixe `jobs/`, expiration après **1 jour**.
+  Exemple de configuration par Wrangler avec accès autorisé au compte :
+
+  ```bash
+  npx wrangler r2 bucket lifecycle add apk-factory apk-factory-jobs jobs/ --expire-days 1
+  npx wrangler r2 bucket lifecycle list apk-factory
+  ```
+
+  Vérifier le nom réel du bucket dans Cloudflare avant d'exécuter la commande.
+  Si le bucket stocke d'autres fichiers, **ne pas** utiliser une règle globale
+  sans filtre. Les effacements R2 ne sont pas instantanés : ils peuvent avoir
+  lieu après l'expiration prévue.
+
+La règle R2 doit être configurée **dans Cloudflare** : un commit GitHub ne
+l'installe pas automatiquement. Cette étape doit être vérifiée dans la console.
+La copie temporaire n'est **jamais effacée prématurément** si la sauvegarde
+Google Drive échoue : l'utilisateur conserve son délai normal de téléchargement.
+Après 24 h, elle expire selon la politique de rétention, même si l'utilisateur
+n'a pas choisi de sauvegarder. L'interface doit présenter clairement ce délai.
+
+Le stockage d'un historique multiappareil dans Drive peut être ajouté ensuite,
+mais cette première intégration sauvegarde uniquement l'APK signé.
