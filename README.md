@@ -230,3 +230,22 @@ n'a pas choisi de sauvegarder. L'interface doit présenter clairement ce délai.
 
 Le stockage d'un historique multiappareil dans Drive peut être ajouté ensuite,
 mais cette première intégration sauvegarde uniquement l'APK signé.
+
+### Contrôles réalisés
+
+- Exécution **réelle** du nettoyage programmé le 5 novembre 2026 :
+  [GitHub Actions #42034429753](https://github.com/MOD-PROD/apk-factory/actions/runs/42034429753).
+  Résultat du runner : `jobsScanned: 6`, `objectsDeleted: 15`.
+- Vérifications automatisées du transfert Google Drive par morceaux de
+  **8 Mio**, de la vérification des fichiers, des erreurs d'upload et de la
+  protection des tâches R2 récentes :
+  [GitHub Actions #42034734194](https://github.com/MOD-PROD/apk-factory/actions/runs/42034734194).
+- L'autorisation Google est préchargée **sans afficher le consentement**.
+  La demande de consentement est ouverte seulement lors du clic de
+  l'utilisateur, afin de ne pas perdre l'activation utilisateur du navigateur.
+
+**Activation Google Drive non encore confirmée en production** : le client
+OAuth `GOOGLE_DRIVE_CLIENT_ID` doit être défini et le consentement Google
+testé avec un véritable utilisateur. L'exécution réussie du nettoyage
+R2 n'implique pas qu'une règle native de cycle de vie du bucket ait été
+configurée ; celle-ci reste recommandée comme filet de sécurité.
