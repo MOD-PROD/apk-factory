@@ -5,7 +5,7 @@ import { json, newJobId, randomHex, readJob, writeJob, same } from "../../_share
 
 function authorized(request, env) {
   const authorization = request.headers.get("authorization") || "";
-  return Boolean(env.CALLBACK_TOKEN && same(authorization.replace(/^Bearer\\s+/i, ""), env.CALLBACK_TOKEN));
+  return Boolean(env.CALLBACK_TOKEN && same(authorization.replace(/^Bearer\s+/i, ""), env.CALLBACK_TOKEN));
 }
 
 export async function onRequestPost({ request, env }) {
