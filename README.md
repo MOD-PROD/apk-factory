@@ -244,8 +244,31 @@ Google Drive échoue : l'utilisateur conserve son délai normal de téléchargem
 Après 24 h, elle expire selon la politique de rétention, même si l'utilisateur
 n'a pas choisi de sauvegarder. L'interface doit présenter clairement ce délai.
 
-Le stockage d'un historique multiappareil dans Drive peut être ajouté ensuite,
-mais cette première intégration sauvegarde uniquement l'APK signé.
+### Historique multiappareil facultatif
+
+L'écran d'accueil propose **« Synchroniser l'historique avec Google Drive »**
+lorsque le client OAuth Google est configuré et la bibliothèque GIS disponible.
+Le bouton demande une autorisation explicite puis fusionne les fabrications
+locales avec un petit fichier `ModProd / APK Factory / historique.json` dans
+le Drive personnel. Le second appareil peut importer les fabrications avec
+le même bouton et le même compte Google.
+
+Le manifeste `modprod-apk-history-v1` ne contient que les informations
+nécessaires : identifiant de tâche, date, nom, package, type, état et clé
+privée de suivi (`statusKey`). **Aucun APK, URL de téléchargement ou jeton
+OAuth n'est synchronisé.** Les clés de suivi étant privées, ce fichier Drive
+doit rester dans le compte Google choisi par l'utilisateur. Les anciennes
+tâches créées sans clé gardent leur fonctionnement antérieur jusqu'à expiration.
+
+La synchronisation est **manuelle** pour ne pas solliciter Drive ni mélanger
+implicitement plusieurs comptes Google sur un ordinateur partagé. Elle ne
+prolonge pas la durée de vie des liens R2 : après 24 heures, les métadonnées
+de l'historique subsistent mais les APK temporaires ne sont plus récupérables.
+La restauration de l'historique ne dépend d'aucune nouvelle base Cloudflare.
+
+Cette intégration Google Drive n'est pas encore une authentification ModProd
+de bout en bout : l'association d'une fabrication à l'identité ModProd côté
+serveur et la politique des droits restent un chantier distinct.
 
 ### Contrôles réalisés
 
