@@ -8,6 +8,7 @@ const DRIVE_UPLOAD = "https://www.googleapis.com/upload/drive/v3/files?uploadTyp
 const UPLOAD_CHUNK_BYTES = 8 * 1024 * 1024;
 
 let gisLoading = null;
+let driveSettings = null;
 
 function googleIdentityScript() {
   if (globalThis.google?.accounts?.oauth2) return Promise.resolve();
@@ -24,8 +25,10 @@ function googleIdentityScript() {
   return gisLoading;
 }
 
-async function googleToken(clientId) {
-  await googleIdentityScript();
+function googleToken(clientId) {
+  // Important: requestAccessToken runs synchronously in the user's click event.
+  // Loading scripts or fetching config first can lose the browser user gesture.
+  if (!globalThis.google?.accounts?.oauth2) throw new Error("Connexion Google non prête.");
   return new Promise((resolve, reject) => {
     let client;
     try {
@@ -138,17 +141,25 @@ async function uploadResumable(blob, name, folderId, token) {
   return { id: saved.id, name: saved.name, link: saved.webViewLink || "https://drive.google.com/drive/u/0/my-drive" };
 }
 
-export async function saveApkToGoogleDrive(apk) {
-  if (!apk || !/^https:\/\//.test(apk.url) || !/^[A-Za-z0-9._-]{1,150}\.apk$/.test(apk.name)) {
-    throw new Error("APK indisponible pour la sauvegarde.");
-  }
+export async function prepareGoogleDrive() {
   const configuration = await fetch("api/drive/config", { cache: "no-store", credentials: "same-origin" });
   if (!configuration.ok) throw new Error("Paramètres Google Drive indisponibles.");
   const settings = await configuration.json();
   if (!settings.enabled || !settings.clientId) {
     throw new Error(settings.message || "Google Drive n'est pas encore configuré par ModProd.");
   }
-  const token = await googleToken(settings.clientId);
+  await googleIdentityScript();
+  driveSettings = settings;
+  return { enabled: true };
+}
+
+export async function saveApkToGoogleDrive(apk) {
+  if (!apk || !/^https:\/\//.test(apk.url) || !/^[A-Za-z0-9._-]{1,150}\.apk$/.test(apk.name)) {
+    throw new Error("APK indisponible pour la sauvegarde.");
+  }
+  if (!driveSettings?.clientId) throw new Error("Google Drive n'est pas encore prêt.");
+  // There is no await before Google opens its consent UI.
+  const token = await googleToken(driveSettings.clientId);
   const result = await fetch(apk.url, { cache: "no-store" });
   if (!result.ok) throw new Error("APK temporaire expiré : retélécharge-le depuis GitHub si disponible.");
   const blob = await result.blob();
