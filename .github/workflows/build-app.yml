@@ -34,6 +34,9 @@ on:
       job_id:
         type: string
         default: ""
+      smoke_r2:
+        type: boolean
+        default: false
   workflow_dispatch:
     inputs:
       type:
@@ -236,6 +239,35 @@ jobs:
           path: out/${{ steps.prep.outputs.apk_name }}
           retention-days: 7
           if-no-files-found: error
+
+      - name: R2 end-to-end signed APK smoke test
+        if: inputs.smoke_r2 == true && inputs.job_id == ''
+        env:
+          CALLBACK_TOKEN: ${{ secrets.CALLBACK_TOKEN }}
+          APK_NAME: ${{ steps.prep.outputs.apk_name }}
+        run: |
+          set -euo pipefail
+          [ -n "$CALLBACK_TOKEN" ] || { echo "::error::CALLBACK_TOKEN manquant pour le test R2"; exit 1; }
+          ENDPOINT="$SITE_URL/api/runner/selftest"
+          AUTH="Authorization: Bearer $CALLBACK_TOKEN"
+          PROBE="$(curl --fail-with-body -sS --retry 2 -X POST -H "$AUTH" "$ENDPOINT")"
+          JOB="$(printf '%s' "$PROBE" | python3 -c 'import json,sys; print(json.load(sys.stdin)["job"])')"
+          DL_KEY="$(printf '%s' "$PROBE" | python3 -c 'import json,sys; print(json.load(sys.stdin)["dlKey"])')"
+          echo "::add-mask::$DL_KEY"
+          export JOB DL_KEY SITE_URL
+          cleanup() {
+            curl -fsS -X DELETE -H "$AUTH" -H 'Content-Type: application/json' \
+              --data-binary "{\"job\":\"$JOB\"}" "$ENDPOINT" -o /dev/null || true
+          }
+          trap cleanup EXIT
+          QUERY="$(python3 -c 'import os,urllib.parse as u; print(u.urlencode({"job":os.environ["JOB"],"name":os.environ["APK_NAME"]}))' )"
+          curl --fail-with-body -sS --retry 2 -X POST -H "$AUTH" \
+            -H 'Content-Type: application/vnd.android.package-archive' \
+            --data-binary "@out/$APK_NAME" "$SITE_URL/api/runner/upload?$QUERY" -o /dev/null
+          DL_URL="$(python3 -c 'import os,urllib.parse as u; print(os.environ["SITE_URL"]+"/api/runner/dl?"+u.urlencode({"job":os.environ["JOB"],"k":os.environ["DL_KEY"]}))')"
+          curl --fail-with-body -sS --retry 2 "$DL_URL" -o work/smoke-downloaded.apk
+          cmp "out/$APK_NAME" work/smoke-downloaded.apk || { echo "::error::APK téléchargé depuis R2 différent de l'APK signé."; exit 1; }
+          echo "R2 smoke test OK : APK signé envoyé, téléchargé et vérifié octet par octet."
 
       - name: Envoyer l'APK au site
         if: inputs.job_id != ''
