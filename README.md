@@ -154,8 +154,7 @@ les intégrations n'introduisent ni comptes supplémentaires ni base de données
 - **Registre central** : entrée `apk-factory` dans
   `https://modprod.app/modprod.json`, utilisée par le Dashboard.
 
-Les liens vers Dashboard et AppMod dans l'en-tête APK Factory permettent
-de revenir à la suite sans modifier les droits ni partager de jetons.
+APK Factory ne présente pas de boutons Dashboard ou AppMod dans son en-tête.\nCes outils administrent l'application depuis ModProd, sans ajouter de navigation intrusive.
 
 
 ## Sauvegarde facultative Google Drive et rétention R2
