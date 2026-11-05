@@ -875,6 +875,8 @@ a.btn{text-decoration:none}
   <h1 id="ttl">APK Factory</h1>
   <span class="badge" id="beta" hidden>BÊTA</span>
   <span class="hver" id="hver" hidden></span>
+  <a class="icon-btn" href="https://dashboard.modprod.app/applications/apk-factory" title="Fiche dans le Dashboard ModProd" aria-label="Dashboard ModProd" rel="noopener">⌂</a>
+  <a class="icon-btn" href="https://admin.modprod.app/" target="_blank" title="Gérer dans AppMod" aria-label="Gérer dans AppMod" rel="noopener">⚙</a>
   <button class="icon-btn" id="install" hidden aria-label="Installer l'appli" title="Installer l'appli">⤓</button>
 </header>
 
@@ -892,11 +894,11 @@ a.btn{text-decoration:none}
   <section data-page="accueil">
     <div class="card">
       <div class="types">
-        <button class="type" type="button" data-open="atv"><span class="ti">📺</span>
+        <button class="type" type="button" data-open="atv" data-feature="atv"><span class="ti">📺</span>
           <span><b>Lanceur Android TV</b><small>Une tuile sur l'accueil de la TV qui ouvre un lien ou une appli</small></span></button>
-        <button class="type" type="button" data-open="web" data-source="web"><span class="ti">🌐</span>
+        <button class="type" type="button" data-open="web" data-source="web" data-feature="siteWeb"><span class="ti">🌐</span>
           <span><b>Site web</b><small>Un site en appli Android, avec son icône et ses réglages</small></span></button>
-        <button class="type" type="button" data-open="web" data-source="html"><span class="ti">📄</span>
+        <button class="type" type="button" data-open="web" data-source="html" data-feature="html"><span class="ti">📄</span>
           <span><b>Appli HTML</b><small>Ta page .html ou ton .zip, intégrés dans l'APK, hors ligne</small></span></button>
         <button class="type" type="button" disabled><span class="ti">🎮</span>
           <span><b>Appli HTML pour TV</b><small>Bientôt</small></span></button>
@@ -1259,8 +1261,7 @@ $("#announce .x").addEventListener("click", () => {
 document.addEventListener("click", e => {
   const el = e.target.closest("[data-feature]");
   if(!el) return;
-  if(el.dataset.state === "lock"){ alert("Fonction disponible dans une formule supérieure."); return; }
-  if(el.dataset.feature === "exemple") alert("La fonction d'exemple marche.");
+  if(el.dataset.state === "lock"){ e.preventDefault(); e.stopImmediatePropagation(); alert("Cette fonction est désactivée pour la formule actuelle dans AppMod."); return; }
 });
 
 /* ---------- Navigation (menu du bas) ---------- */
@@ -1584,6 +1585,7 @@ function renderHistory(){
   });
 }
 document.querySelectorAll("[data-open]").forEach(b => b.addEventListener("click", () => {
+  if(b.dataset.feature && MP.feature(b.dataset.feature) !== "on") return;
   if(b.dataset.source){ webForm.source.value = b.dataset.source; syncSource(); }
   go(b.dataset.open);
 }));
