@@ -31,8 +31,8 @@ jobs:
             exit 1
           fi
           for pass in 1 2 3; do
-            output="$(curl --fail-with-body --retry 2 --silent --show-error \
-              --connect-timeout 10 --max-time 90 \
+            output="$(curl --fail-with-body --retry-all-errors --retry 6 --retry-delay 15 --silent --show-error \
+              --connect-timeout 10 --max-time 20 \
               -X POST -H "Authorization: Bearer $CALLBACK_TOKEN" \
               "$SITE_URL/api/runner/cleanup")"
             printf '%s\n' "$output"
