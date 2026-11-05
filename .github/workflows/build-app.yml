@@ -11,6 +11,29 @@ name: Fabriquer une appli
 # Secrets : ANDROID_KEYSTORE_B64 (.p12 en base64), ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS.
 
 on:
+  workflow_call:
+    inputs:
+      type:
+        type: string
+        required: true
+      app_name:
+        type: string
+        required: true
+      package_name:
+        type: string
+        required: true
+      version_name:
+        type: string
+        default: "1.0.0"
+      version_code:
+        type: string
+        default: "1"
+      html_url:
+        type: string
+        default: ""
+      job_id:
+        type: string
+        default: ""
   workflow_dispatch:
     inputs:
       type:
