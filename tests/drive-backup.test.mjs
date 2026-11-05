@@ -44,10 +44,14 @@ function mocks({ wrongSize = false, googleFailure = false, payload = DATA } = {}
     if (target.includes("upload_id=mock") && options.method === "PUT") {
       if (googleFailure) return json({ error: { message: "Upload refused" } }, { status: 500 });
       assert.ok(options.body.size <= 8 * 1024 * 1024);
-      assert.match(options.headers["Content-Range"], /^bytes \\d+-\\d+\\/\\d+$/);
       const header = options.headers["Content-Range"];
-      const match = /^bytes (\\d+)-(\\d+)\\/(\\d+)$/.exec(header);
-      const end = Number(match[2]);
+      assert.ok(header.startsWith("bytes "), "Content-Range required");
+      const [range, total] = header.slice(6).split("/");
+      const [first, last] = range.split("-");
+      const begin = Number(first), end = Number(last);
+      assert.ok(Number.isSafeInteger(begin) && Number.isSafeInteger(end));
+      assert.equal(Number(total), payload.length);
+      assert.equal(options.body.size, end - begin + 1);
       if (end + 1 < payload.length) {
         return new Response(null, { status: 308, headers: { Range: "bytes=0-" + end } });
       }
