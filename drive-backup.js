@@ -7,6 +7,17 @@ const DRIVE_API = "https://www.googleapis.com/drive/v3/files";
 const DRIVE_UPLOAD = "https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable";
 const UPLOAD_CHUNK_BYTES = 8 * 1024 * 1024;
 
+export function isTrustedDriveUploadUrl(value) {
+  try {
+    const url = new URL(value);
+    const host = url.hostname.toLowerCase();
+    return url.protocol === "https:" &&
+      !url.username && !url.password && !url.port &&
+      (host === "googleapis.com" || host.endsWith(".googleapis.com")) &&
+      url.pathname.startsWith("/upload/drive/v3/files");
+  } catch { return false; }
+}
+
 let gisLoading = null;
 let driveSettings = null;
 
@@ -93,7 +104,7 @@ async function uploadResumable(blob, name, folderId, token) {
     body: JSON.stringify({ name, mimeType: APK_MIME, parents: [folderId] })
   });
   const session = opened.headers.get("Location");
-  if (!session || !/^https:\/\/[a-z0-9.-]*googleapis\.com\//i.test(session)) {
+  if (!session || !isTrustedDriveUploadUrl(session)) {
     throw new Error("Session de transfert Google Drive non disponible.");
   }
   // Direct browser-to-Drive transfer using 8 MiB chunks (multiple of 256 KiB).
@@ -231,7 +242,7 @@ export async function syncHistoryWithGoogleDrive(localHistory) {
         body: JSON.stringify({ name: "historique.json", mimeType: "application/json",
           parents: [folder] }) });
     const session = uploaded.headers.get("Location");
-    if (!session || !/^https:\/\/(?:[a-z0-9-]+\.)*googleapis\.com\//i.test(session)) {
+    if (!session || !isTrustedDriveUploadUrl(session)) {
       throw new Error("Session Google Drive non disponible.");
     }
     const result = await driveFetch(session, token, {
