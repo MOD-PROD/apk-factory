@@ -95,3 +95,30 @@ secrets dans le dépôt, les URLs ou les journaux publics.
 Le test `selftest` ne touche jamais aux tâches utilisateurs : il crée et efface
 une tâche temporaire isolée. Il ne remplace pas un test interactif de
 l'interface avec un compte Cloudflare Access réel.
+
+
+### Contrôle de session Cloudflare Access (ModProd)
+
+La route `GET /api/session` vérifie cryptographiquement un JWT Cloudflare Access
+(recherche de la clé publique dans le JWKS du domaine d'équipe, signature RS256,
+issuer, audience et expiration). Aucun nouveau mot de passe, utilisateur ou jeton
+ModProd n'est émis, et aucune adresse e-mail n'est exposée par cette route.
+
+Pour activer ce diagnostic dans les variables **Cloudflare Pages** d'APK Factory :
+
+- `ACCESS_TEAM` : nom d'équipe Zero Trust (ou domaine `<équipe>.cloudflareaccess.com`).
+- `ACCESS_AUD` : *Application Audience (AUD) Tag* de l'application Access
+  protégeant `apk-factory.modprod.app` (ce n'est pas nécessairement le même
+  AUD que celui du Dashboard ou d'AppMod).
+
+Réponses : `200` si le jeton est valide, `401` si absent/invalide et `503`
+si les paramètres ne sont pas définis. Cette route est **diagnostique** : elle
+ne remplace pas la règle Cloudflare Access qui doit protéger le domaine et les
+routes `/api/build` et `/api/status`.
+
+**SSO entre Dashboard, AppMod et APK Factory** : dans Cloudflare Zero Trust,
+configurer les trois applications avec le même compte d'équipe / fournisseur
+d'identité et des politiques d'accès cohérentes. Chaque application possède
+son propre AUD ; la réutilisation de la session de l'identité dépend des règles
+Zero Trust et ne se déduit pas du catalogue ModProd. Tester la navigation
+Dashboard → APK Factory avec un compte autorisé avant de déclarer le SSO validé.
