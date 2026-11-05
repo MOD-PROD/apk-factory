@@ -4,6 +4,8 @@ on:
   push:
     paths:
       - 'functions/api/runner/upload.js'
+      - 'functions/api/runner/cleanup.js'
+      - 'tests/r2-cleanup.test.mjs'
       - 'functions/api/runner/selftest.js'
       - 'functions/api/build.js'
       - 'functions/api/session.js'
@@ -30,6 +32,8 @@ on:
   pull_request:
     paths:
       - 'functions/api/runner/upload.js'
+      - 'functions/api/runner/cleanup.js'
+      - 'tests/r2-cleanup.test.mjs'
       - 'functions/api/runner/selftest.js'
       - 'functions/api/build.js'
       - 'functions/api/session.js'
