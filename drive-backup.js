@@ -5,6 +5,7 @@ const FOLDER_MIME = "application/vnd.google-apps.folder";
 const APK_MIME = "application/vnd.android.package-archive";
 const DRIVE_API = "https://www.googleapis.com/drive/v3/files";
 const DRIVE_UPLOAD = "https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable";
+const UPLOAD_CHUNK_BYTES = 8 * 1024 * 1024;
 
 let gisLoading = null;
 
@@ -92,14 +93,40 @@ async function uploadResumable(blob, name, folderId, token) {
   if (!session || !/^https:\/\/[a-z0-9.-]*googleapis\.com\//i.test(session)) {
     throw new Error("Session de transfert Google Drive non disponible.");
   }
-  // Direct browser -> Drive; no APK data is posted back to Cloudflare.
-  const uploaded = await driveFetch(session, token, {
-    method: "PUT",
-    headers: { "Content-Type": APK_MIME },
-    body: blob
-  });
-  const result = await uploaded.json();
-  if (!result.id) throw new Error("Google Drive n'a pas confirmé le fichier.");
+  // Direct browser-to-Drive transfer using 8 MiB chunks (multiple of 256 KiB).
+  let result = null;
+  for (let start = 0; start < blob.size;) {
+    const end = Math.min(blob.size, start + UPLOAD_CHUNK_BYTES);
+    const response = await fetch(session, {
+      method: "PUT",
+      headers: {
+        Authorization: "Bearer " + token,
+        "Content-Type": APK_MIME,
+        "Content-Range": "bytes " + start + "-" + (end - 1) + "/" + blob.size
+      },
+      body: blob.slice(start, end)
+    });
+    if (response.status === 308) {
+      if (end === blob.size) throw new Error("Google Drive n'a pas finalisé le transfert.");
+      const range = response.headers.get("Range");
+      const confirmed = /^bytes=0-(\d+)$/.exec(range || "");
+      if (!confirmed || Number(confirmed[1]) + 1 !== end) {
+        throw new Error("Impossible de confirmer la progression du transfert Google Drive.");
+      }
+      start = end;
+      continue;
+    }
+    if (!response.ok) {
+      let detail = "";
+      try { detail = (await response.json()).error?.message || ""; } catch {}
+      throw new Error("Google Drive : HTTP " + response.status
+        + (detail ? " — " + detail.slice(0, 150) : ""));
+    }
+    if (end !== blob.size) throw new Error("Google Drive a terminé le transfert trop tôt.");
+    result = await response.json();
+    start = end;
+  }
+  if (!result?.id) throw new Error("Google Drive n'a pas confirmé le fichier.");
   // Check the actual Drive metadata, not only the HTTP status of the upload.
   const inspected = await driveFetch(DRIVE_API + "/" + encodeURIComponent(result.id)
     + "?fields=id,name,size,parents,webViewLink", token);
