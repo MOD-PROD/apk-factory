@@ -1498,7 +1498,7 @@ async function send(fd, o){
       return;
     }
     remember({job: d.job, appName: o.name, packageName: o.pkg, form: o.type, status: "queued", createdAt: new Date().toISOString()});
-    openJob(d.job, o.name, o.type);
+    openJob(d.job, o.name, o.type, d.statusKey);
   }catch(err){
     showErrors(o.errBox, ["Pas de connexion avec le site. Vérifie ta connexion et réessaie."]);
   }finally{
@@ -1507,9 +1507,10 @@ async function send(fd, o){
 }
 
 /* --- Suivi d'une fabrication --- */
-let pollTimer = null, currentJob = null, currentForm = "atv";
-function openJob(job, name, form){
+let pollTimer = null, currentJob = null, currentForm = "atv", currentStatusKey = null;
+function openJob(job, name, form, statusKey){
   driveApk = null;
+  currentStatusKey = statusKey || loadHistory().find(j => j.job === job)?.statusKey || null;
   currentJob = job; currentForm = form || "atv";
   go("suivi");
   const c = $("#jobCard"); c.hidden = false;
