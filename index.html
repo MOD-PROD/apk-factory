@@ -1670,8 +1670,14 @@ function renderHistory(){
     const li = document.createElement("li"), n = document.createElement("span"), b = document.createElement("b"), s = document.createElement("small");
     n.className = "jn"; b.textContent = j.appName || j.job; s.textContent = (j.packageName || "") + " · " + j.job;
     n.append(b, s);
-    const st = document.createElement("span"); st.className = "st " + (j.status || ""); st.textContent = STATUS_TXT[j.status] || j.status || "";
-    const open = document.createElement("button"); open.className = "btn ghost"; open.type = "button"; open.textContent = "Ouvrir";
+    const expired = Number.isFinite(Date.parse(j.createdAt || "")) &&
+      Date.now() - Date.parse(j.createdAt) >= 24 * 60 * 60 * 1000;
+    const st = document.createElement("span"); st.className = "st " + (j.status || "");
+    st.textContent = expired ? "expirée" : (STATUS_TXT[j.status] || j.status || "");
+    const open = document.createElement("button"); open.className = "btn ghost"; open.type = "button";
+    open.textContent = expired ? "Expiré" : "Ouvrir";
+    open.disabled = expired;
+    if (expired) open.title = "APK temporaire supprimé après 24 heures. La fiche historique reste sur Google Drive.";
     open.style.cssText = "min-height:36px;padding:0 10px;font-size:13px";
     open.addEventListener("click", () => openJob(j.job, j.appName, j.form || (j.type === "atv" ? "atv" : "web"), j.statusKey));
     li.append(n, st, open); ul.append(li);
