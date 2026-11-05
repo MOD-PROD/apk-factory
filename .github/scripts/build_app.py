@@ -235,7 +235,12 @@ def get_html(url, work):
         fail("Page HTML : aucun fichier .html à la racine (de l'archive).")
         return None
     start = "index.html" if "index.html" in pages else pages[0]
-    print(f"Page de démarrage : {start} ({sum(1 for _ in folder.rglob('*') if _.is_file())} fichiers)")
+    # Le patch Android ouvre index.html : normaliser une page d'entrée nommée autrement.
+    # Conserver le fichier original pour ne pas rompre les liens internes éventuels.
+    if start != "index.html":
+        shutil.copyfile(folder / start, folder / "index.html")
+        print(f"Page de démarrage « {start} » copiée vers index.html.")
+    print(f"Page de démarrage : index.html ({sum(1 for _ in folder.rglob('*') if _.is_file())} fichiers)")
     return str(folder)
 
 
