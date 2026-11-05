@@ -4,6 +4,9 @@ on:
   push:
     paths:
       - 'functions/api/runner/upload.js'
+      - 'functions/api/runner/selftest.js'
+      - 'functions/api/runner/dl.js'
+      - 'tests/r2-roundtrip.test.mjs'
       - 'functions/_shared.js'
       - 'functions/api/status.js'
       - '.github/scripts/build_app.py'
@@ -14,6 +17,9 @@ on:
   pull_request:
     paths:
       - 'functions/api/runner/upload.js'
+      - 'functions/api/runner/selftest.js'
+      - 'functions/api/runner/dl.js'
+      - 'tests/r2-roundtrip.test.mjs'
       - 'functions/_shared.js'
       - 'functions/api/status.js'
       - '.github/scripts/build_app.py'
