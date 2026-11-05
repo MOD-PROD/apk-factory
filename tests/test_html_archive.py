@@ -1,6 +1,8 @@
 import importlib.util
 import io
+import shutil
 import stat
+from unittest.mock import patch
 import tempfile
 import unittest
 import zipfile
@@ -70,6 +72,31 @@ class HtmlArchiveTests(unittest.TestCase):
         entry.external_attr = (stat.S_IFLNK | 0o777) << 16
         with self.assertRaisesRegex(ValueError, "spéciale"):
             self.check([(entry, "../outside")])
+
+
+    def test_named_html_is_normalized_to_index(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            work = Path(tmp)
+            source = work / "source.htm"
+            source.write_text("<html>Page de test</html>", encoding="utf-8")
+            with patch.object(module, "download", return_value=source):
+                folder = module.get_html("https://example.com/accueil.htm", work)
+            self.assertIsNotNone(folder)
+            self.assertEqual((Path(folder) / "index.html").read_text(encoding="utf-8"), "<html>Page de test</html>")
+            self.assertTrue((Path(folder) / "accueil.htm").exists())
+
+    def test_zip_html_with_nonstandard_entry_point(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            work = Path(tmp)
+            source = work / "source.zip"
+            with zipfile.ZipFile(source, "w") as z:
+                z.writestr("mon-site/accueil.html", "<html>Bienvenue</html>")
+                z.writestr("mon-site/assets/style.css", "body {}")
+            with patch.object(module, "download", return_value=source):
+                folder = module.get_html("https://example.com/site.zip", work)
+            self.assertIsNotNone(folder)
+            self.assertEqual((Path(folder) / "index.html").read_text(encoding="utf-8"), "<html>Bienvenue</html>")
+            self.assertTrue((Path(folder) / "assets/style.css").exists())
 
 
 if __name__ == "__main__":
