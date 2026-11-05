@@ -6,6 +6,8 @@ on:
       - 'functions/api/runner/upload.js'
       - 'functions/_shared.js'
       - 'functions/api/status.js'
+      - '.github/scripts/build_app.py'
+      - 'tests/test_html_archive.py'
       - 'tests/status.test.mjs'
       - 'tests/runner-upload.test.mjs'
       - '.github/workflows/test-runner-upload.yml'
@@ -14,6 +16,8 @@ on:
       - 'functions/api/runner/upload.js'
       - 'functions/_shared.js'
       - 'functions/api/status.js'
+      - '.github/scripts/build_app.py'
+      - 'tests/test_html_archive.py'
       - 'tests/status.test.mjs'
       - 'tests/runner-upload.test.mjs'
       - '.github/workflows/test-runner-upload.yml'
@@ -31,5 +35,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Validate Python archive extraction
+        run: python3 -m unittest discover -s tests -p 'test_*.py' -v
       - name: Regression tests for APK callbacks
         run: node --experimental-default-type=module --test tests/*.test.mjs
