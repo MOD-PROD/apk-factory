@@ -1081,6 +1081,9 @@ a.btn{text-decoration:none}
       <div class="result" id="jobResult" hidden>
         <p id="jobInfo"></p>
         <a class="btn wide" id="jobDl" href="#">Télécharger l'APK</a>
+        <button class="btn ghost wide" type="button" id="jobDrive">Sauvegarder sur mon Google Drive</button>
+        <small id="jobDriveStatus" role="status" aria-live="polite">Sauvegarde facultative dans ModProd / APK Factory. Ton compte Google sera demandé.</small>
+        <a id="jobDriveLink" href="#" target="_blank" rel="noopener noreferrer" hidden>Ouvrir dans Google Drive</a>
         <div class="qr" id="jobQr"></div>
         <small>Scanne le QR code avec le téléphone ou la TV, ou tape le lien dans Downloader :</small>
         <span class="mono" id="jobLink"></span>
@@ -1505,6 +1508,7 @@ async function send(fd, o){
 /* --- Suivi d'une fabrication --- */
 let pollTimer = null, currentJob = null, currentForm = "atv";
 function openJob(job, name, form){
+  driveApk = null;
   currentJob = job; currentForm = form || "atv";
   go("suivi");
   const c = $("#jobCard"); c.hidden = false;
@@ -1539,7 +1543,35 @@ function showJobError(list){
   showErrors($("#jobErr"), list);
 }
 function fmtSize(n){ return n ? (n / 1048576).toFixed(1).replace(".", ",") + " Mo" : ""; }
+let driveApk = null;
+let driveSaving = false;
+$("#jobDrive").addEventListener("click", async () => {
+  if(!driveApk || driveSaving) return;
+  driveSaving = true;
+  const button = $("#jobDrive"), info = $("#jobDriveStatus");
+  button.disabled = true;
+  button.textContent = "Sauvegarde Google Drive…";
+  info.textContent = "Connexion et transfert vers ton Drive en cours. Ne ferme pas cette page.";
+  try {
+    const { saveApkToGoogleDrive } = await import("./drive-backup.js");
+    const file = await saveApkToGoogleDrive(driveApk);
+    info.textContent = "APK sauvegardé et vérifié sur Google Drive. La copie temporaire reste téléchargeable jusqu'à son expiration.";
+    const link = $("#jobDriveLink");
+    link.href = file.link;
+    link.hidden = false;
+    button.textContent = "Sauvegardé sur Google Drive";
+  } catch(error) {
+    info.textContent = error?.message || "Sauvegarde Google Drive impossible. L'APK reste disponible au téléchargement.";
+    button.textContent = "Réessayer Google Drive";
+    button.disabled = false;
+  } finally { driveSaving = false; }
+});
 function showResult(d){
+  driveApk = d.apk;
+  $("#jobDriveLink").hidden = true;
+  $("#jobDriveStatus").textContent = "Sauvegarde facultative dans ModProd / APK Factory.";
+  $("#jobDrive").disabled = false;
+  $("#jobDrive").textContent = "Sauvegarder sur mon Google Drive";
   $("#jobProgress").hidden = true;
   $("#jobResult").hidden = false;
   $("#jobInfo").textContent = `${d.packageName} · v${d.versionName} (${d.versionCode})` + (d.apk.size ? " · " + fmtSize(d.apk.size) : "");
