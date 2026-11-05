@@ -42,6 +42,12 @@ export function newJobId() {
 }
 
 export const JOB_RE = /^\d{8}-\d{4}-[0-9a-f]{6}$/;
+export const JOB_RETENTION_MS = 24 * 60 * 60 * 1000;
+
+export function isJobExpired(job, now = Date.now()) {
+  const created = Date.parse(job?.createdAt || "");
+  return Number.isFinite(created) && now - created >= JOB_RETENTION_MS;
+}
 
 // Comparaison sans fuite de temps (secrets, clés de téléchargement).
 export function same(a, b) {
@@ -55,7 +61,11 @@ export function same(a, b) {
 export async function readJob(env, job) {
   if (!JOB_RE.test(job || "")) return null;
   const o = await env.FILES.get(`jobs/${job}/job.json`);
-  return o ? await o.json() : null;
+  if (!o) return null;
+  const data = await o.json();
+  // Expire public download links independently of the R2 bucket lifecycle rule.
+  // Physical R2 deletion is performed by a lifecycle rule (see README).
+  return isJobExpired(data) ? null : data;
 }
 
 export async function writeJob(env, data) {
