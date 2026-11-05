@@ -1,0 +1,31 @@
+name: Test runner callbacks
+
+on:
+  push:
+    paths:
+      - 'functions/api/runner/upload.js'
+      - 'functions/_shared.js'
+      - 'tests/runner-upload.test.mjs'
+      - '.github/workflows/test-runner-upload.yml'
+  pull_request:
+    paths:
+      - 'functions/api/runner/upload.js'
+      - 'functions/_shared.js'
+      - 'tests/runner-upload.test.mjs'
+      - '.github/workflows/test-runner-upload.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Regression tests for APK callbacks
+        run: node --experimental-default-type=module --test tests/runner-upload.test.mjs
