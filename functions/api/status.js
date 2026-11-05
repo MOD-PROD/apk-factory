@@ -43,15 +43,34 @@ export async function onRequestPost({ request, env }) {
         if (run.conclusion !== "success") {
           j.status = "failed";
           j.error = j.error || (run.conclusion === "cancelled" ? "Fabrication annulée." : "La fabrication a échoué : voir le détail sur GitHub.");
+        } else {
+          // Le workflow a réussi mais le callback peut encore être en transit.
+          const finishedAt = Date.parse(run.updated_at || run.run_started_at || "");
+          if (Number.isFinite(finishedAt) && Date.now() - finishedAt > 2 * 60 * 1000) {
+            j.status = "failed";
+            j.error = "GitHub a terminé sans confirmer l'APK sur le site. Vérifier le callback et le stockage R2.";
+          } else {
+            j.status = "running";
+            j.step = "Finalisation du téléchargement de l'APK";
+          }
         }
       } else {
         j.status = "running";
         j.step = run.status === "in_progress" ? "Fabrication en cours" : "En attente d'une machine GitHub";
       }
+      // Un callback peut finaliser la tâche pendant la consultation GitHub.
+      const latest = await readJob(env, j.job);
+      if (latest?.status === "done" || latest?.status === "failed") {
+        return json(publicView(env, latest));
+      }
       await writeJob(env, j);
     } else if (Date.now() - Date.parse(j.createdAt) > 10 * 60 * 1000) {
       j.status = "failed";
       j.error = "Aucun run GitHub trouvé pour cette tâche après 10 minutes.";
+      const latest = await readJob(env, j.job);
+      if (latest?.status === "done" || latest?.status === "failed") {
+        return json(publicView(env, latest));
+      }
       await writeJob(env, j);
     }
   }
