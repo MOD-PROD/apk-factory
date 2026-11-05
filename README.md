@@ -210,8 +210,19 @@ explicitement ; aucun accès général à tout le Drive n'est demandé.
   sans filtre. Les effacements R2 ne sont pas instantanés : ils peuvent avoir
   lieu après l'expiration prévue.
 
-La règle R2 doit être configurée **dans Cloudflare** : un commit GitHub ne
-l'installe pas automatiquement. Cette étape doit être vérifiée dans la console.
+Une seconde protection est prévue dans le dépôt : la route
+`POST /api/runner/cleanup`, authentifiée par le secret `CALLBACK_TOKEN`,
+supprime les objets des tâches expirées sous `jobs/` seulement. Le workflow
+`.github/workflows/cleanup-r2.yml` l'appelle automatiquement toutes les
+6 heures (UTC), en lots limités pour éviter des opérations R2 excessives.
+En cas de réponse 405, vérifier que la route Pages Function est réellement
+déployée. Ce nettoyage nécessite le workflow GitHub actif, le secret
+`CALLBACK_TOKEN` et l'accès HTTP à `apk-factory.modprod.app`.
+
+Conserver aussi une règle de cycle de vie **dans Cloudflare R2**, indépendante
+des workflows GitHub, reste recommandé : elle est la protection ultime si
+GitHub Actions ne s'exécute pas. Un commit GitHub ne configure pas
+automatiquement cette règle. Vérifier son activation dans Cloudflare.
 La copie temporaire n'est **jamais effacée prématurément** si la sauvegarde
 Google Drive échoue : l'utilisateur conserve son délai normal de téléchargement.
 Après 24 h, elle expire selon la politique de rétention, même si l'utilisateur
