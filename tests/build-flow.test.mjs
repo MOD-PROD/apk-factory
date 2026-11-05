@@ -54,8 +54,11 @@ test("HTML form stores input in R2, dispatches GitHub and allows authorized file
     const data = await response.json();
     assert.match(data.job, /^\d{8}-\d{4}-[0-9a-f]{6}$/);
     assert.equal(data.status, "queued");
+    assert.match(data.statusKey, /^[a-f0-9]{48}$/);
     const job = JSON.parse(ctx.objects.get(`jobs/${data.job}/job.json`));
     assert.equal(job.type, "html");
+    assert.equal(job.statusKey, data.statusKey);
+    assert.notEqual(job.statusKey, job.dlKey);
     assert.equal(job.bundleName, "index.html");
     assert.equal(calls.length, 1);
     assert.match(calls[0].url, /\/actions\/workflows\/build-app\.yml\/dispatches$/);
