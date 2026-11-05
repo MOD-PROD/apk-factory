@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { saveApkToGoogleDrive } from "../drive-backup.js";
+import { prepareGoogleDrive, saveApkToGoogleDrive } from "../drive-backup.js";
 
 const NAME = "app.modprod.integration-1.0.apk";
 const APK_URL = "https://apk-factory.modprod.app/api/runner/dl?job=20261105-1430-a1b2c3&k=example";
@@ -83,6 +83,7 @@ function mocks({ wrongSize = false, googleFailure = false, payload = DATA } = {}
 test("direct browser-to-Google backup verifies the returned Drive file without exposing OAuth to Cloudflare", async () => {
   const mock = mocks();
   try {
+    await prepareGoogleDrive();
     const saved = await saveApkToGoogleDrive({ name: NAME, url: APK_URL, size: DATA.length });
     assert.equal(saved.id, "apk-123");
     assert.match(saved.link, /drive\.google\.com/);
@@ -94,6 +95,7 @@ test("direct browser-to-Google backup verifies the returned Drive file without e
 test("backup rejects mismatched Drive size rather than reporting success", async () => {
   const mock = mocks({ wrongSize: true });
   try {
+    await prepareGoogleDrive();
     await assert.rejects(saveApkToGoogleDrive({ name: NAME, url: APK_URL, size: DATA.length }), /vérifiée/);
   } finally { mock.restore(); }
 });
@@ -101,6 +103,7 @@ test("backup rejects mismatched Drive size rather than reporting success", async
 test("backup reports Drive error and leaves temporary APK untouched", async () => {
   const mock = mocks({ googleFailure: true });
   try {
+    await prepareGoogleDrive();
     await assert.rejects(saveApkToGoogleDrive({ name: NAME, url: APK_URL, size: DATA.length }), /HTTP 500/);
     assert.ok(!mock.requests.some(r => r.url.includes("delete") || r.options.method === "DELETE"));
   } finally { mock.restore(); }
@@ -112,6 +115,7 @@ test("large APK uploads in independently acknowledged 8 MiB chunks", async () =>
   payload.set([80, 75, 3, 4]);
   const mock = mocks({ payload });
   try {
+    await prepareGoogleDrive();
     const saved = await saveApkToGoogleDrive({ name: NAME, url: APK_URL, size: payload.length });
     assert.equal(saved.id, "apk-123");
     const chunks = mock.requests.filter(req => req.options.method === "PUT");
