@@ -48,7 +48,9 @@ test("session diagnostic verifies signed Access JWT and rejects mismatched audie
     assert.equal(expired.status, 401);
     const badAlg = await onRequestGet({ request: request(token({ alg: "none" })), env });
     assert.equal(badAlg.status, 401);
-    const tampered = token().replace(/.$/, x => x === "a" ? "b" : "a");
+    const signed = token();
+    const signatureStart = signed.lastIndexOf(".") + 1;
+    const tampered = signed.slice(0, signatureStart) + (signed[signatureStart] === "a" ? "b" : "a") + signed.slice(signatureStart + 1);
     const badSignature = await onRequestGet({ request: request(tampered), env });
     assert.equal(badSignature.status, 401);
   } finally {
