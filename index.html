@@ -1381,6 +1381,7 @@ function showErrors(box, list){
 
 atvForm.addEventListener("submit", async e => {
   e.preventDefault();
+  if(MP.feature("atv") !== "on"){ showErrors($("#atvErrs"), ["Générateur Android TV désactivé dans AppMod."]); return; }
   const f = atvForm, m = f.mode.value, errs = [];
   const name = f.appName.value.trim(), url = f.targetUrl.value.trim(), apk = f.targetApk.value.trim();
   if(!atvPkg.value.trim() && name) atvPkg.value = slug(name) ? PKG_PREFIX.atv + slug(name) : "";
@@ -1447,6 +1448,9 @@ webForm.addEventListener("submit", e => {
   e.preventDefault();
   const f = webForm, errs = [];
   const name = f.appName.value.trim(), url = f.webUrl.value.trim(), isHtml = f.source.value === "html";
+  if(MP.feature(isHtml ? "html" : "siteWeb") !== "on"){
+    showErrors($("#webErrs"), ["Ce générateur est désactivé dans AppMod."]); return;
+  }
   if(!webPkg.value.trim() && name) webPkg.value = slug(name) ? PKG_PREFIX.web + slug(name) : "";
   const pkg = webPkg.value.trim();
   if(!name) errs.push("Nom de l'appli obligatoire.");
