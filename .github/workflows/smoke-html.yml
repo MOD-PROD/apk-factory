@@ -1,0 +1,23 @@
+name: Smoke build HTML signed APK
+
+on:
+  push:
+    paths:
+      - '.github/workflows/smoke-html.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-html:
+    name: Compile, sign and verify HTML APK
+    uses: ./.github/workflows/build-app.yml
+    with:
+      type: html
+      app_name: 'APK Factory HTML Smoke Test'
+      package_name: 'app.modprod.apkfactory.htmlsmoke'
+      version_name: '1.0.0'
+      version_code: '1'
+      html_url: 'https://raw.githubusercontent.com/MOD-PROD/apk-factory/main/tests/fixtures/smoke-index.html'
+    secrets: inherit
