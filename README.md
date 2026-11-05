@@ -157,6 +157,22 @@ les intégrations n'introduisent ni comptes supplémentaires ni base de données
 APK Factory ne présente pas de boutons Dashboard ou AppMod dans son en-tête.\nCes outils administrent l'application depuis ModProd, sans ajouter de navigation intrusive.
 
 
+## Confidentialité des fabrications
+
+Chaque **nouvelle** fabrication reçoit une clé de suivi privée de 192 bits
+(`statusKey`), différente de la clé permettant de télécharger l'APK.
+Le client conserve cette clé uniquement dans son historique local et l'envoie
+dans le corps de `POST /api/status` (jamais dans une URL). L'API refuse
+de divulguer le statut, les métadonnées ou le lien de téléchargement d'une
+fabrication récente sans la bonne clé. Cette protection limite la découverte
+accidentelle des fabrications par d'autres utilisateurs autorisés.
+
+Les anciennes tâches créées sans `statusKey` restent compatibles jusqu'à
+leur expiration de 24 heures. Il ne s'agit pas encore d'un véritable historique
+multiappareil associé au compte ModProd : cette évolution nécessite de valider
+l'identité ModProd côté serveur et une synchronisation autorisée. Les clés de
+suivi ne doivent pas être copiées dans les journaux publics.
+
 ## Sauvegarde facultative Google Drive et rétention R2
 
 Objectif : APK Factory ne conserve pas durablement les APK sur Cloudflare.
