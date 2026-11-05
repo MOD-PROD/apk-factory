@@ -2,7 +2,7 @@
 // Réponse : { job, status: queued|running|done|failed, step, runUrl, apk: {name, size, url}, error }
 // POST (et pas GET) : le service worker ne met jamais ces réponses en cache.
 
-import { json, site, repo, gh, readJob, writeJob, WORKFLOW } from "../_shared.js";
+import { json, site, repo, gh, readJob, writeJob, same, WORKFLOW } from "../_shared.js";
 
 function publicView(env, j) {
   const out = {
@@ -32,6 +32,7 @@ export async function onRequestPost({ request, env }) {
   try { body = await request.json(); } catch { /* vide */ }
   const j = await readJob(env, body.job);
   if (!j) return json({ error: "Tâche inconnue." }, 404);
+  if (j.statusKey && !same(body.statusKey, j.statusKey)) return json({ error: "Tâche inconnue." }, 404);
 
   if (j.status === "queued" || j.status === "running") {
     const run = env.GITHUB_TOKEN ? await findRun(env, j.job) : null;
