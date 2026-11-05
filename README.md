@@ -104,7 +104,7 @@ La route `GET /api/session` vérifie cryptographiquement un JWT Cloudflare Acces
 issuer, audience et expiration). Aucun nouveau mot de passe, utilisateur ou jeton
 ModProd n'est émis, et aucune adresse e-mail n'est exposée par cette route.
 
-Pour activer ce diagnostic dans les variables **Cloudflare Pages** d'APK Factory :
+Pour activer ce contrôle de session dans les variables **Cloudflare Pages** d'APK Factory :
 
 - `ACCESS_TEAM` : nom d'équipe Zero Trust (ou domaine `<équipe>.cloudflareaccess.com`).
 - `ACCESS_AUD` : *Application Audience (AUD) Tag* de l'application Access
@@ -112,9 +112,7 @@ Pour activer ce diagnostic dans les variables **Cloudflare Pages** d'APK Factory
   AUD que celui du Dashboard ou d'AppMod).
 
 Réponses : `200` si le jeton est valide, `401` si absent/invalide et `503`
-si les paramètres ne sont pas définis. Cette route est **diagnostique** : elle
-ne remplace pas la règle Cloudflare Access qui doit protéger le domaine et les
-routes `/api/build` et `/api/status`.
+si les paramètres ne sont pas définis. Cette route est **diagnostique**.\n\nLorsque `ACCESS_TEAM` et `ACCESS_AUD` sont renseignés, les routes\n`/api/build` et `/api/status` imposent également la vérification du JWT signé\ncôté Pages Function (401 si invalide). Une configuration partielle bloque ces\nAPI (503). Sans ces variables, la protection existante par Cloudflare Access\nen amont reste seule responsable du contrôle d'accès. Les routes du runner\nconservent leur authentification distincte par `CALLBACK_TOKEN` et clé de\ntéléchargement. Cette vérification côté origine complète mais ne remplace\njamais les politiques Cloudflare Access sur les domaines.
 
 **SSO entre Dashboard, AppMod et APK Factory** : dans Cloudflare Zero Trust,
 configurer les trois applications avec le même compte d'équipe / fournisseur
