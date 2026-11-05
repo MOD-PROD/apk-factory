@@ -905,6 +905,8 @@ a.btn{text-decoration:none}
     <div class="card" id="historyCard" hidden>
       <h2>Dernières fabrications</h2>
       <ul class="jobs" id="history"></ul>
+      <button class="btn ghost wide" type="button" id="historyDrive" hidden disabled>Synchroniser l'historique avec Google Drive</button>
+      <small id="historyDriveStatus" role="status" aria-live="polite" hidden></small>
     </div>
   </section>
 
@@ -1550,6 +1552,42 @@ let driveSaving = false;
 let driveModule = null;
 let drivePrepared = false;
 let drivePreparationId = 0;
+
+function enableDriveHistory() {
+  const button = $("#historyDrive");
+  button.hidden = false;
+  button.disabled = false;
+  renderHistory();
+}
+async function prepareDriveHistory() {
+  try {
+    const mod = await import("./drive-backup.js");
+    await mod.prepareGoogleDrive();
+    driveModule = mod;
+    enableDriveHistory();
+  } catch {
+    // Drive is optional; no extra prompt or card when OAuth is not configured.
+  }
+}
+$("#historyDrive").addEventListener("click", async () => {
+  if (!driveModule) return;
+  const button = $("#historyDrive"), status = $("#historyDriveStatus");
+  button.disabled = true;
+  status.hidden = false;
+  status.textContent = "Synchronisation de l'historique avec ton Google Drive…";
+  try {
+    // Opens Google's consent UI directly from this click.
+    const jobs = await driveModule.syncHistoryWithGoogleDrive(loadHistory());
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(jobs.slice(0, 15)));
+    renderHistory();
+    status.textContent = "Historique synchronisé : " + jobs.length + " fabrication(s).";
+  } catch (error) {
+    status.textContent = error?.message || "Synchronisation impossible. Les données locales restent inchangées.";
+  } finally {
+    button.disabled = false;
+  }
+});
+prepareDriveHistory();
 $("#jobDrive").addEventListener("click", async () => {
   if(!driveApk || driveSaving || !drivePrepared || !driveModule) return;
   driveSaving = true;
@@ -1626,7 +1664,7 @@ function remember(j){
 const STATUS_TXT = {queued: "en attente", running: "en cours", done: "prêt", failed: "échec"};
 function renderHistory(){
   const list = loadHistory(), ul = $("#history");
-  $("#historyCard").hidden = !list.length;
+  $("#historyCard").hidden = !list.length && $("#historyDrive").hidden;
   ul.textContent = "";
   list.forEach(j => {
     const li = document.createElement("li"), n = document.createElement("span"), b = document.createElement("b"), s = document.createElement("small");
