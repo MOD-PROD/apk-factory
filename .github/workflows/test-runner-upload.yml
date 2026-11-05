@@ -5,6 +5,9 @@ on:
     paths:
       - 'functions/api/runner/upload.js'
       - 'functions/api/runner/selftest.js'
+      - 'functions/api/build.js'
+      - 'functions/api/runner/file.js'
+      - 'tests/build-flow.test.mjs'
       - 'functions/api/runner/dl.js'
       - 'tests/r2-roundtrip.test.mjs'
       - 'functions/_shared.js'
@@ -18,6 +21,9 @@ on:
     paths:
       - 'functions/api/runner/upload.js'
       - 'functions/api/runner/selftest.js'
+      - 'functions/api/build.js'
+      - 'functions/api/runner/file.js'
+      - 'tests/build-flow.test.mjs'
       - 'functions/api/runner/dl.js'
       - 'tests/r2-roundtrip.test.mjs'
       - 'functions/_shared.js'
