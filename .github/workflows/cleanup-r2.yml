@@ -1,0 +1,41 @@
+name: Nettoyer les APK temporaires R2
+
+on:
+  schedule:
+    - cron: '17 */6 * * *'
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/cleanup-r2.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: apk-factory-r2-cleanup
+  cancel-in-progress: false
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Supprimer les fichiers de plus de 24 h
+        env:
+          CALLBACK_TOKEN: ${{ secrets.CALLBACK_TOKEN }}
+          SITE_URL: https://apk-factory.modprod.app
+        run: |
+          set -euo pipefail
+          if [ -z "$CALLBACK_TOKEN" ]; then
+            echo "::error::Secret CALLBACK_TOKEN manquant."
+            exit 1
+          fi
+          for pass in 1 2 3; do
+            output="$(curl --fail-with-body --retry 2 --silent --show-error \
+              --connect-timeout 10 --max-time 90 \
+              -X POST -H "Authorization: Bearer $CALLBACK_TOKEN" \
+              "$SITE_URL/api/runner/cleanup")"
+            printf '%s\n' "$output"
+            more="$(printf '%s' "$output" | python3 -c 'import json,sys; d=json.load(sys.stdin); assert d.get("ok") is True; print(str(d.get("more") is True).lower())')"
+            [ "$more" = "true" ] || break
+          done
