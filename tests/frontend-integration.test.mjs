@@ -15,9 +15,12 @@ test("all inline APK Factory scripts are syntactically valid", () => {
 });
 
 test("APK Factory header has no intrusive Dashboard or AppMod shortcuts", () => {
-  const header = html.match(/<header class="top">([\\s\\S]*?)<\\/header>/)?.[1] || "";
-  assert.ok(header, "Top header missing");
-  assert.doesNotMatch(header, /dashboard\\.modprod\\.app|admin\\.modprod\\.app/);
+  const start = html.indexOf('<header class="top">');
+  const end = html.indexOf("</header>", start);
+  assert.ok(start >= 0 && end > start, "Top header missing");
+  const header = html.slice(start, end);
+  assert.ok(!header.includes("dashboard.modprod.app"));
+  assert.ok(!header.includes("admin.modprod.app"));
 });
 
 test("AppMod features align with actual builders and submission checks", () => {
