@@ -112,7 +112,16 @@ Pour activer ce contrôle de session dans les variables **Cloudflare Pages** d'A
   AUD que celui du Dashboard ou d'AppMod).
 
 Réponses : `200` si le jeton est valide, `401` si absent/invalide et `503`
-si les paramètres ne sont pas définis. Cette route est **diagnostique**.\n\nLorsque `ACCESS_TEAM` et `ACCESS_AUD` sont renseignés, les routes\n`/api/build` et `/api/status` imposent également la vérification du JWT signé\ncôté Pages Function (401 si invalide). Une configuration partielle bloque ces\nAPI (503). Sans ces variables, la protection existante par Cloudflare Access\nen amont reste seule responsable du contrôle d'accès. Les routes du runner\nconservent leur authentification distincte par `CALLBACK_TOKEN` et clé de\ntéléchargement. Cette vérification côté origine complète mais ne remplace\njamais les politiques Cloudflare Access sur les domaines.
+si les paramètres ne sont pas définis. Cette route est **diagnostique**.
+
+Lorsque `ACCESS_TEAM` et `ACCESS_AUD` sont renseignés, les routes
+`/api/build` et `/api/status` imposent également la vérification du JWT signé
+côté Pages Function (401 si invalide). Une configuration partielle bloque ces
+API (503). Sans ces variables, la protection existante par Cloudflare Access
+en amont reste seule responsable du contrôle d'accès. Les routes du runner
+conservent leur authentification distincte par `CALLBACK_TOKEN` et clé de
+téléchargement. Cette vérification côté origine complète mais ne remplace
+jamais les politiques Cloudflare Access sur les domaines.
 
 **SSO entre Dashboard, AppMod et APK Factory** : dans Cloudflare Zero Trust,
 configurer les trois applications avec le même compte d'équipe / fournisseur
