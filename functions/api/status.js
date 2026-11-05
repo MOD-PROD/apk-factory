@@ -35,7 +35,14 @@ export async function onRequestPost({ request, env }) {
   if (j.statusKey && !same(body.statusKey, j.statusKey)) return json({ error: "Tâche inconnue." }, 404);
 
   if (j.status === "queued" || j.status === "running") {
+    // Each browser may poll frequently; avoid repeatedly hitting GitHub and
+    // rewriting R2 metadata while the same build is still in progress.
+    const checked = Date.parse(j.lastGitHubCheckAt || "");
+    if (Number.isFinite(checked) && Date.now() - checked < 15 * 1000) {
+      return json(publicView(env, j));
+    }
     const run = env.GITHUB_TOKEN ? await findRun(env, j.job) : null;
+    const checkedAt = new Date().toISOString();
     if (run) {
       j.runId = run.id;
       j.runUrl = run.html_url;
@@ -64,10 +71,20 @@ export async function onRequestPost({ request, env }) {
       if (latest?.status === "done" || latest?.status === "failed") {
         return json(publicView(env, latest));
       }
+      j.lastGitHubCheckAt = checkedAt;
       await writeJob(env, j);
     } else if (Date.now() - Date.parse(j.createdAt) > 10 * 60 * 1000) {
       j.status = "failed";
       j.error = "Aucun run GitHub trouvé pour cette tâche après 10 minutes.";
+      const latest = await readJob(env, j.job);
+      if (latest?.status === "done" || latest?.status === "failed") {
+        return json(publicView(env, latest));
+      }
+      j.lastGitHubCheckAt = checkedAt;
+      await writeJob(env, j);
+    } else if (env.GITHUB_TOKEN) {
+      // A missing run is normal while GitHub queues the workflow.
+      j.lastGitHubCheckAt = checkedAt;
       const latest = await readJob(env, j.job);
       if (latest?.status === "done" || latest?.status === "failed") {
         return json(publicView(env, latest));
