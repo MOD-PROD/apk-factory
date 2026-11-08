@@ -151,6 +151,9 @@ export async function onRequestPost({ request, env }) {
       atv_mode: mode, atv_target_url: mode === "apk" ? "" : targetUrl, atv_target_apk: mode === "url" ? "" : targetApk,
       atv_is_game: isGame ? "true" : "false", banner_url: banner ? base + "banner.png" : "",
     } : {
+      // Base expérimentale WebTheme + switch in-app (appui long).
+      // À retirer quand la base prod intègrera WebTheme.
+      use_native_ui: "true",
       reglages: Object.keys(reglages).length ? JSON.stringify(reglages) : "",
       ...(isHtml ? { html_url: base + bundleName, config_url: config ? base + "config.js" : "" } : { web_url: webUrl }),
     }),
