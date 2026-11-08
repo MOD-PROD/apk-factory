@@ -32,7 +32,7 @@
         "k": "e2",
         "type": "title",
         "pos": "left",
-        "size": 48
+        "size": 30
       }
     ]
   },
@@ -42,7 +42,7 @@
     "droite": "",
     "bas": ""
   },
-  "updated": "2026-11-03T23:33:17.171Z",
+  "updated": "2026-11-08T11:48:22.651Z",
   "menus": {
     "v": 1,
     "size": null,
