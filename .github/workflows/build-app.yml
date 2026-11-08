@@ -37,6 +37,10 @@ on:
       smoke_r2:
         type: boolean
         default: false
+      use_native_ui:
+        description: "Base + patches expérimentaux WebTheme (ne pas utiliser en prod)"
+        type: boolean
+        default: false
   workflow_dispatch:
     inputs:
       type:
@@ -69,8 +73,12 @@ on:
         description: "Icône PNG carrée, lien https:// (facultatif ; site-web : vide = icône du site)"
         default: ""
       reglages:
-        description: 'site-web / html : réglages en JSON (facultatif), ex. {"fullscreen":true,"barsColor":"#FAFAFA"}'
+        description: 'site-web / html : réglages en JSON (facultatif), ex. {"fullscreen":true,"barsColor":"#FAFAFA","webTheme":"native"}'
         default: ""
+      use_native_ui:
+        description: "Utiliser base + patches expérimentaux WebTheme (test uniquement)"
+        type: boolean
+        default: false
       atv_mode:
         description: "atv : action au lancement"
         type: choice
@@ -80,43 +88,32 @@ on:
         description: "atv : lien cible (https:// ou intent://)"
         default: ""
       atv_target_apk:
-        description: "atv : package de l'appli cible (ex. com.google.android.youtube.tv)"
+        description: "atv : package de l'appli cible"
         default: ""
       banner_url:
-        description: "atv : bannière PNG 320 × 180, lien https:// (facultatif)"
+        description: "atv : bannière 320×180 PNG, lien https:// (facultatif)"
         default: ""
       atv_is_game:
-        description: "atv : ranger dans « Jeux »"
+        description: "atv : afficher dans la rangée Jeux"
         type: boolean
         default: false
-      job_id:
-        description: "Identifiant de tâche (rempli par le site en phase 2)"
-        default: ""
-
-run-name: "${{ inputs.job_id && format('[{0}] ', inputs.job_id) || '' }}${{ inputs.type }} · ${{ inputs.app_name }} (${{ inputs.package_name }})"
-
-permissions:
-  contents: read
 
 env:
   MORPHE_VERSION: '2.0.0-dev.4'
   PATCHES_REPO: 'MOD-PROD/modprod-apk-creator'
-  SITE_URL: 'https://apk-factory.modprod.app'
-  JAVA_TOOL_OPTIONS: '-Dfile.encoding=UTF-8 -Dstdout.encoding=UTF-8 -Dstderr.encoding=UTF-8'
 
 jobs:
   build:
-    name: Fabriquer l'APK
+    name: Fabriquer
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    permissions:
+      contents: read
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
-        with:
-          sparse-checkout: .github
+        uses: actions/checkout@v4
 
       - name: Setup Java
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '21'
@@ -126,181 +123,27 @@ jobs:
           mkdir -p tools
           curl -fsSL -o tools/morphe.jar \
             "https://github.com/MorpheApp/morphe-desktop/releases/download/v${MORPHE_VERSION}/morphe-desktop-${MORPHE_VERSION}-all.jar"
-          MPP_URL=$(curl -fsSL "https://raw.githubusercontent.com/${PATCHES_REPO}/main/patches-bundle.json" \
-            | python3 -c 'import json,sys; print(json.load(sys.stdin)["download_url"])')
+          USE_NATIVE_UI="${{ inputs.use_native_ui }}"
+          if [ "$USE_NATIVE_UI" = "true" ]; then
+            echo "Mode expérimental native-ui : base + patches depuis release native-ui-experimental"
+            MPP_URL="https://github.com/${PATCHES_REPO}/releases/download/native-ui-experimental/patches-native-ui.mpp"
+            BASE_TAG="native-ui-experimental"
+          else
+            MPP_URL=$(curl -fsSL "https://raw.githubusercontent.com/${PATCHES_REPO}/main/patches-bundle.json" \
+              | python3 -c 'import json,sys; print(json.load(sys.stdin)["download_url"])')
+            BASE_TAG="base-apk"
+          fi
           echo "Patches : $MPP_URL"
+          echo "Base release : $BASE_TAG"
           curl -fsSL -o tools/patches.mpp "$MPP_URL"
           for b in apk-base.apk atv-base.apk; do
-            curl -fsSL -o "tools/$b" "https://github.com/${PATCHES_REPO}/releases/download/base-apk/$b"
+            # atv-base reste sur base-apk prod si absent de la release expérimentale
+            if [ "$BASE_TAG" = "native-ui-experimental" ] && [ "$b" = "atv-base.apk" ]; then
+              curl -fsSL -o "tools/$b" "https://github.com/${PATCHES_REPO}/releases/download/base-apk/$b" || true
+            else
+              curl -fsSL -o "tools/$b" "https://github.com/${PATCHES_REPO}/releases/download/${BASE_TAG}/$b"
+            fi
           done
           java -jar tools/morphe.jar options-create -p tools/patches.mpp -o tools/options-template.json
+ freestyle
           echo "MPP_URL=$MPP_URL" >> "$GITHUB_ENV"
-
-      - name: Vérifier les réglages et préparer les fichiers
-        id: prep
-        env:
-          WORK_DIR: work
-          OPTIONS_TEMPLATE: tools/options-template.json
-          CALLBACK_TOKEN: ${{ secrets.CALLBACK_TOKEN }}
-          IN_TYPE: ${{ inputs.type }}
-          IN_APP_NAME: ${{ inputs.app_name }}
-          IN_PACKAGE: ${{ inputs.package_name }}
-          IN_VERSION_NAME: ${{ inputs.version_name }}
-          IN_VERSION_CODE: ${{ inputs.version_code }}
-          IN_WEB_URL: ${{ inputs.web_url }}
-          IN_HTML_URL: ${{ inputs.html_url }}
-          IN_CONFIG_URL: ${{ inputs.config_url }}
-          IN_ICON_URL: ${{ inputs.icon_url }}
-          IN_REGLAGES: ${{ inputs.reglages }}
-          IN_ATV_MODE: ${{ inputs.atv_mode }}
-          IN_ATV_TARGET_URL: ${{ inputs.atv_target_url }}
-          IN_ATV_TARGET_APK: ${{ inputs.atv_target_apk }}
-          IN_BANNER_URL: ${{ inputs.banner_url }}
-          IN_ATV_IS_GAME: ${{ inputs.atv_is_game }}
-        run: |
-          mkdir -p work
-          python3 -I .github/scripts/build_app.py 2>&1 | tee work/prep.log
-          exit "${PIPESTATUS[0]}"
-
-      - name: Patcher avec Morphe CLI
-        run: |
-          java -jar tools/morphe.jar patch \
-            -p tools/patches.mpp \
-            --options-file "${{ steps.prep.outputs.options }}" \
-            --unsigned \
-            -r work/result.json \
-            -o work/unsigned.apk \
-            "tools/${{ steps.prep.outputs.base }}"
-          python3 - <<'EOF' | tee work/morphe.log
-          import json, sys
-          r = json.load(open("work/result.json", encoding="utf-8"))
-          print(json.dumps(r, ensure_ascii=False, indent=2)[:4000])
-          if not r.get("success"):
-              print("::error::Morphe : le patch a échoué (voir le résultat ci-dessus).")
-              sys.exit(1)
-          EOF
-          exit "${PIPESTATUS[0]}"
-
-      - name: Signer avec la clé ModProd
-        env:
-          KS_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
-          KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          KS_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          APK_NAME: ${{ steps.prep.outputs.apk_name }}
-        run: |
-          if [ -z "$KS_B64" ] || [ -z "$KS_PASS" ] || [ -z "$KS_ALIAS" ]; then
-            echo "::error::Secrets de signature manquants (ANDROID_KEYSTORE_B64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS)."
-            exit 1
-          fi
-          KS="$RUNNER_TEMP/modprod-release.p12"
-          echo "$KS_B64" | tr -d ' \r\n' | base64 -d > "$KS"
-          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
-          "$BT/zipalign" -p -f 4 work/unsigned.apk work/aligned.apk
-          mkdir -p out
-          "$BT/apksigner" sign --ks "$KS" --ks-type PKCS12 --ks-key-alias "$KS_ALIAS" \
-            --ks-pass env:KS_PASS --key-pass env:KS_PASS \
-            --out "out/$APK_NAME" work/aligned.apk
-          rm -f "$KS"
-          echo "BT=$BT" >> "$GITHUB_ENV"
-
-      - name: Vérifier l'APK
-        env:
-          APK_NAME: ${{ steps.prep.outputs.apk_name }}
-          PKG: ${{ steps.prep.outputs.package }}
-          IN_APP_NAME: ${{ inputs.app_name }}
-          IN_TYPE: ${{ inputs.type }}
-          JOB_ID: ${{ inputs.job_id }}
-        run: |
-          APK="out/$APK_NAME"
-          "$BT/apksigner" verify --print-certs "$APK" | tee work/certs.txt
-          "$BT/aapt2" dump badging "$APK" > work/badging.txt
-          head -5 work/badging.txt
-          grep -q "package: name='$PKG'" work/badging.txt || { echo "::error::Nom de package inattendu dans l'APK."; exit 1; }
-          {
-            echo "## ✅ $IN_APP_NAME"
-            echo
-            echo "| | |"
-            echo "|---|---|"
-            echo "| Type | \`$IN_TYPE\` |"
-            echo "| Package | \`$PKG\` |"
-            echo "| Version | $(grep -o "versionName='[^']*'" work/badging.txt | cut -d"'" -f2) ($(grep -o "versionCode='[^']*'" work/badging.txt | cut -d"'" -f2)) |"
-            echo "| Fichier | \`$APK_NAME\` ($(du -h "$APK" | cut -f1)) |"
-            echo "| Patches | $(basename "$MPP_URL") · Morphe $MORPHE_VERSION |"
-            echo "| Certificat SHA-256 | \`$(grep -m1 'SHA-256' work/certs.txt | awk '{print $NF}')\` |"
-            [ -n "$JOB_ID" ] && echo "| Tâche du site | \`$JOB_ID\` |"
-            echo
-            echo "L'APK est dans **Artifacts**, en bas de cette page (gardé 7 jours)."
-          } >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Artefact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ steps.prep.outputs.apk_name }}
-          path: out/${{ steps.prep.outputs.apk_name }}
-          retention-days: 7
-          if-no-files-found: error
-
-      - name: R2 end-to-end signed APK smoke test
-        if: inputs.smoke_r2 == true && inputs.job_id == ''
-        env:
-          CALLBACK_TOKEN: ${{ secrets.CALLBACK_TOKEN }}
-          APK_NAME: ${{ steps.prep.outputs.apk_name }}
-        run: |
-          set -euo pipefail
-          [ -n "$CALLBACK_TOKEN" ] || { echo "::error::CALLBACK_TOKEN manquant pour le test R2"; exit 1; }
-          ENDPOINT="$SITE_URL/api/runner/selftest"
-          AUTH="Authorization: Bearer $CALLBACK_TOKEN"
-          PROBE="$(curl --fail-with-body -sS --retry 2 -X POST -H "$AUTH" "$ENDPOINT")"
-          JOB="$(printf '%s' "$PROBE" | python3 -c 'import json,sys; print(json.load(sys.stdin)["job"])')"
-          DL_KEY="$(printf '%s' "$PROBE" | python3 -c 'import json,sys; print(json.load(sys.stdin)["dlKey"])')"
-          echo "::add-mask::$DL_KEY"
-          export JOB DL_KEY SITE_URL
-          cleanup() {
-            curl -fsS -X DELETE -H "$AUTH" -H 'Content-Type: application/json' \
-              --data-binary "{\"job\":\"$JOB\"}" "$ENDPOINT" -o /dev/null || true
-          }
-          trap cleanup EXIT
-          QUERY="$(python3 -c 'import os,urllib.parse as u; print(u.urlencode({"job":os.environ["JOB"],"name":os.environ["APK_NAME"]}))' )"
-          curl --fail-with-body -sS --retry 2 -X POST -H "$AUTH" \
-            -H 'Content-Type: application/vnd.android.package-archive' \
-            --data-binary "@out/$APK_NAME" "$SITE_URL/api/runner/upload?$QUERY" -o /dev/null
-          DL_URL="$(python3 -c 'import os,urllib.parse as u; print(os.environ["SITE_URL"]+"/api/runner/dl?"+u.urlencode({"job":os.environ["JOB"],"k":os.environ["DL_KEY"]}))')"
-          curl --fail-with-body -sS --retry 2 "$DL_URL" -o work/smoke-downloaded.apk
-          cmp "out/$APK_NAME" work/smoke-downloaded.apk || { echo "::error::APK téléchargé depuis R2 différent de l'APK signé."; exit 1; }
-          echo "R2 smoke test OK : APK signé envoyé, téléchargé et vérifié octet par octet."
-
-      - name: Envoyer l'APK au site
-        if: inputs.job_id != ''
-        env:
-          CALLBACK_TOKEN: ${{ secrets.CALLBACK_TOKEN }}
-          JOB_ID: ${{ inputs.job_id }}
-          APK_NAME: ${{ steps.prep.outputs.apk_name }}
-          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        run: |
-          [ -n "$CALLBACK_TOKEN" ] || { echo "::error::Secret CALLBACK_TOKEN manquant."; exit 1; }
-          CERT=$(grep -m1 'SHA-256' work/certs.txt | awk '{print $NF}')
-          export CERT
-          QUERY=$(python3 -c 'import os, urllib.parse as u; print(u.urlencode({"job": os.environ["JOB_ID"], "name": os.environ["APK_NAME"], "cert": os.environ["CERT"], "run": os.environ["RUN_URL"]}))')
-          curl -fsS --retry 3 -X POST \
-            -H "Authorization: Bearer $CALLBACK_TOKEN" \
-            -H "Content-Type: application/vnd.android.package-archive" \
-            --data-binary "@out/$APK_NAME" \
-            "$SITE_URL/api/runner/upload?$QUERY" -o /dev/null -w "Site : HTTP %{http_code}\n"
-
-      - name: Prévenir le site de l'échec
-        if: failure() && inputs.job_id != ''
-        env:
-          CALLBACK_TOKEN: ${{ secrets.CALLBACK_TOKEN }}
-          JOB_ID: ${{ inputs.job_id }}
-          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        run: |
-          MSG=$(grep -h '::error::' work/*.log 2>/dev/null | head -3 | sed 's/::error:://')
-          QUERY=$(python3 -c 'import os, urllib.parse as u; print(u.urlencode({"job": os.environ["JOB_ID"], "status": "failed", "run": os.environ["RUN_URL"]}))')
-          printf '%s' "${MSG:-La fabrication a échoué : voir le détail sur GitHub.}" | curl -sS -X POST \
-            -H "Authorization: Bearer $CALLBACK_TOKEN" -H "Content-Type: text/plain; charset=utf-8" \
-            --data-binary @- \
-            "$SITE_URL/api/runner/upload?$QUERY" -o /dev/null || true
-
-      - name: Nettoyer la clé
-        if: always()
-        run: rm -f "$RUNNER_TEMP/modprod-release.p12"
