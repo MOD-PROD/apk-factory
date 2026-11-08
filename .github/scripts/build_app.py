@@ -72,20 +72,6 @@ def check_package(pkg):
             fail(f"Nom de package « {pkg} » : « {p} » est un mot réservé Java.")
 
 
-def check_https(label, url, required=False):
-    if not url:
-        if required:
-            fail(f"{label} obligatoire.")
-        return
-    try:
-        u = urllib.request.urlparse if False else __import__("urllib.parse", fromlist=["urlparse"]).urlparse
-        parsed = u(url)
-        if parsed.scheme != "https" or "." not in (parsed.hostname or ""):
-            raise ValueError
-    except Exception:
-        fail(f"{label} : https://… attendue.")
-
-
 def download(url, dest):
     if not url:
         return None
@@ -106,7 +92,8 @@ def download(url, dest):
 
 def png_size(path):
     data = Path(path).read_bytes()
-    if len(data) < 24 or data[:8] != b"\x89PNG\r\\x1a\n":
+    # Signature PNG : 89 50 4E 47 0D 0A 1A 0A
+    if len(data) < 24 or data[:8] != bytes([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]):
         return None
     import struct
     w, h = struct.unpack(">II", data[16:24])
@@ -178,7 +165,6 @@ def get_html(url, work):
         with zipfile.ZipFile(raw) as zf:
             zf.extractall(zdir)
         return str(zdir)
-    # single html file
     dest = work / "html" / "index.html"
     dest.parent.mkdir(parents=True, exist_ok=True)
     dest.write_bytes(raw.read_bytes())
