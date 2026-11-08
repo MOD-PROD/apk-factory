@@ -42,6 +42,7 @@ JAVA_RESERVED = {
 # Options du patch « ModProd Réglages » acceptées dans l'entrée « reglages » (JSON).
 REGLAGES = {
     "orientation": ("choice", {"portrait", "auto"}),
+    "webTheme": ("choice", {"auto", "native", "css", "invert"}),
     "fullscreen": ("bool", None),
     "keepScreenOn": ("bool", None),
     "blockScreenshots": ("bool", None),
@@ -331,6 +332,7 @@ def main():
         for k, (kind, _) in REGLAGES.items():
             reglages[k] = False if kind == "bool" else None
         reglages["orientation"] = "portrait"
+        reglages["webTheme"] = "auto"
         reglages.update(parse_reglages(env("IN_REGLAGES")))
         patches["ModProd App"] = {"enabled": True, "options": app}
         patches["ModProd Réglages"] = {"enabled": True, "options": reglages}
