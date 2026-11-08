@@ -24,23 +24,20 @@ if old_call not in t:
 t = t.replace(old_call, new_call, 1)
 
 old_reg = """      reglages:
-        description: 'site-web / html : reglages en JSON (facultatif), ex. {"fullscreen":true,"barsColor":"#FAFAFA"}'
+        description: 'site-web / html : r\u00e9glages en JSON (facultatif), ex. {"fullscreen":true,"barsColor":"#FAFAFA"}'
         default: ""
 """
-# tolerate both accents and non-accents in description
-import re
-m = re.search(r"      reglages:\n        description: 'site-web / html :[^']*'\n        default: \"\"\n", t)
-if not m:
-    raise SystemExit("reglages block not found")
 new_reg = """      reglages:
-        description: 'site-web / html : reglages en JSON (facultatif), ex. {"fullscreen":true,"barsColor":"#FAFAFA","webTheme":"native"}'
+        description: 'site-web / html : r\u00e9glages en JSON (facultatif), ex. {"fullscreen":true,"barsColor":"#FAFAFA","webTheme":"native"}'
         default: ""
       use_native_ui:
         description: "Utiliser base + patches experimentaux WebTheme (test uniquement)"
         type: boolean
         default: false
 """
-t = t[:m.start()] + new_reg + t[m.end():]
+if old_reg not in t:
+    raise SystemExit("reglages block not found")
+t = t.replace(old_reg, new_reg, 1)
 
 old_dl = """          MPP_URL=$(curl -fsSL "https://raw.githubusercontent.com/${PATCHES_REPO}/main/patches-bundle.json" \\\n            | python3 -c 'import json,sys; print(json.load(sys.stdin)["download_url"])')
           echo "Patches : $MPP_URL"
