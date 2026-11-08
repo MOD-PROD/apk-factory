@@ -38,7 +38,7 @@ on:
         type: boolean
         default: false
       use_native_ui:
-        description: "Base + patches expérimentaux WebTheme (ne pas utiliser en prod)"
+        description: "Base + patches experimentaux WebTheme (ne pas utiliser en prod)"
         type: boolean
         default: false
   workflow_dispatch:
@@ -76,7 +76,7 @@ on:
         description: 'site-web / html : réglages en JSON (facultatif), ex. {"fullscreen":true,"barsColor":"#FAFAFA","webTheme":"native"}'
         default: ""
       use_native_ui:
-        description: "Utiliser base + patches expérimentaux WebTheme (test uniquement)"
+        description: "Utiliser base + patches experimentaux WebTheme (test uniquement)"
         type: boolean
         default: false
       atv_mode:
@@ -125,7 +125,7 @@ jobs:
             "https://github.com/MorpheApp/morphe-desktop/releases/download/v${MORPHE_VERSION}/morphe-desktop-${MORPHE_VERSION}-all.jar"
           USE_NATIVE_UI="${{ inputs.use_native_ui }}"
           if [ "$USE_NATIVE_UI" = "true" ]; then
-            echo "Mode expérimental native-ui : base + patches depuis release native-ui-experimental"
+            echo "Mode experimental native-ui : base + patches depuis release native-ui-experimental"
             MPP_URL="https://github.com/${PATCHES_REPO}/releases/download/native-ui-experimental/patches-native-ui.mpp"
             BASE_TAG="native-ui-experimental"
           else
@@ -137,7 +137,6 @@ jobs:
           echo "Base release : $BASE_TAG"
           curl -fsSL -o tools/patches.mpp "$MPP_URL"
           for b in apk-base.apk atv-base.apk; do
-            # atv-base reste sur base-apk prod si absent de la release expérimentale
             if [ "$BASE_TAG" = "native-ui-experimental" ] && [ "$b" = "atv-base.apk" ]; then
               curl -fsSL -o "tools/$b" "https://github.com/${PATCHES_REPO}/releases/download/base-apk/$b" || true
             else
@@ -145,5 +144,125 @@ jobs:
             fi
           done
           java -jar tools/morphe.jar options-create -p tools/patches.mpp -o tools/options-template.json
- freestyle
           echo "MPP_URL=$MPP_URL" >> "$GITHUB_ENV"
+
+      - name: Vérifier les réglages et préparer les fichiers
+        id: prep
+        env:
+          WORK_DIR: work
+          OPTIONS_TEMPLATE: tools/options-template.json
+          CALLBACK_TOKEN: ${{ secrets.CALLBACK_TOKEN }}
+          IN_TYPE: ${{ inputs.type }}
+          IN_APP_NAME: ${{ inputs.app_name }}
+          IN_PACKAGE: ${{ inputs.package_name }}
+          IN_VERSION_NAME: ${{ inputs.version_name }}
+          IN_VERSION_CODE: ${{ inputs.version_code }}
+          IN_WEB_URL: ${{ inputs.web_url }}
+          IN_HTML_URL: ${{ inputs.html_url }}
+          IN_CONFIG_URL: ${{ inputs.config_url }}
+          IN_ICON_URL: ${{ inputs.icon_url }}
+          IN_REGLAGES: ${{ inputs.reglages }}
+          IN_ATV_MODE: ${{ inputs.atv_mode }}
+          IN_ATV_TARGET_URL: ${{ inputs.atv_target_url }}
+          IN_ATV_TARGET_APK: ${{ inputs.atv_target_apk }}
+          IN_BANNER_URL: ${{ inputs.banner_url }}
+          IN_ATV_IS_GAME: ${{ inputs.atv_is_game }}
+        run: |
+          mkdir -p work
+          python3 -I .github/scripts/build_app.py 2>&1 | tee work/prep.log
+          exit "${PIPESTATUS[0]}"
+
+      - name: Patcher avec Morphe CLI
+        run: |
+          java -jar tools/morphe.jar patch \
+            -p tools/patches.mpp \
+            --options-file "${{ steps.prep.outputs.options }}" \
+            --unsigned \
+            -r work/result.json \
+            -o work/unsigned.apk \
+            "tools/${{ steps.prep.outputs.base }}"
+          python3 - <<'EOF' | tee work/morphe.log
+          import json, sys
+          r = json.load(open("work/result.json", encoding="utf-8"))
+          print(json.dumps(r, ensure_ascii=False, indent=2)[:4000])
+          if not r.get("success"):
+              print("::error::Morphe : le patch a échoué (voir le résultat ci-dessus).")
+              sys.exit(1)
+          EOF
+
+      - name: Signer l'APK
+        env:
+          ANDROID_KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+          KS_B64="$ANDROID_KEYSTORE_B64"
+          KS="$RUNNER_TEMP/modprod-release.p12"
+          echo "$KS_B64" | tr -d ' \r\n' | base64 -d > "$KS"
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          mkdir -p out
+          APK_NAME="${{ steps.prep.outputs.apk_name }}"
+          "$BT/zipalign" -p -f 4 work/unsigned.apk work/aligned.apk
+          "$BT/apksigner" sign --ks "$KS" --ks-pass "pass:$ANDROID_KEYSTORE_PASSWORD" \
+            --ks-key-alias "$ANDROID_KEY_ALIAS" --key-pass "pass:$ANDROID_KEYSTORE_PASSWORD" \
+            --out "out/$APK_NAME" work/aligned.apk
+          "$BT/apksigner" verify --print-certs "out/$APK_NAME" | tee work/certs.txt
+
+      - name: Artefact APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.prep.outputs.apk_name }}
+          path: out/${{ steps.prep.outputs.apk_name }}
+          retention-days: 7
+
+      - name: Résumé
+        run: |
+          APK_NAME="${{ steps.prep.outputs.apk_name }}"
+          {
+            echo "### APK fabriqué"
+            echo "| Champ | Valeur |"
+            echo "| --- | --- |"
+            echo "| Fichier | \`$APK_NAME\` |"
+            echo "| Package | \`${{ steps.prep.outputs.package }}\` |"
+            echo "| Patches | $(basename "$MPP_URL") · Morphe $MORPHE_VERSION |"
+            echo
+            echo "Télécharge l'artefact du run (conservé 7 jours)."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Envoyer l'APK au site
+        if: inputs.job_id != ''
+        env:
+          CALLBACK_TOKEN: ${{ secrets.CALLBACK_TOKEN }}
+          SITE_URL: ${{ vars.SITE_URL || 'https://apk.modprod.app' }}
+          JOB_ID: ${{ inputs.job_id }}
+          APK_NAME: ${{ steps.prep.outputs.apk_name }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          [ -n "$CALLBACK_TOKEN" ] || { echo "::error::Secret CALLBACK_TOKEN manquant."; exit 1; }
+          CERT=$(grep -m1 'SHA-256' work/certs.txt | awk '{print $NF}')
+          export CERT
+          QUERY=$(python3 -c 'import os, urllib.parse as u; print(u.urlencode({"job": os.environ["JOB_ID"], "name": os.environ["APK_NAME"], "cert": os.environ["CERT"], "run": os.environ["RUN_URL"]}))')
+          curl -fsS --retry 3 -X POST \
+            -H "Authorization: Bearer $CALLBACK_TOKEN" \
+            -H "Content-Type: application/vnd.android.package-archive" \
+            --data-binary "@out/$APK_NAME" \
+            "$SITE_URL/api/runner/upload?$QUERY" -o /dev/null -w "Site : HTTP %{http_code}\n"
+
+      - name: Prévenir le site de l'échec
+        if: failure() && inputs.job_id != ''
+        env:
+          CALLBACK_TOKEN: ${{ secrets.CALLBACK_TOKEN }}
+          JOB_ID: ${{ inputs.job_id }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          MSG=$(grep -h '::error::' work/*.log 2>/dev/null | head -3 | sed 's/::error:://')
+          QUERY=$(python3 -c 'import os, urllib.parse as u; print(u.urlencode({"job": os.environ["JOB_ID"], "status": "failed", "run": os.environ["RUN_URL"]}))')
+          printf '%s' "${MSG:-La fabrication a échoué : voir le détail sur GitHub.}" | curl -sS -X POST \
+            -H "Authorization: Bearer $CALLBACK_TOKEN" -H "Content-Type: text/plain; charset=utf-8" \
+            --data-binary @- \
+            "$SITE_URL/api/runner/upload?$QUERY" -o /dev/null || true
+
+      - name: Nettoyer la clé
+        if: always()
+        run: rm -f "$RUNNER_TEMP/modprod-release.p12"
