@@ -37,10 +37,6 @@ on:
       smoke_r2:
         type: boolean
         default: false
-      use_native_ui:
-        description: "Base + patches experimentaux WebTheme (ne pas utiliser en prod)"
-        type: boolean
-        default: false
   workflow_dispatch:
     inputs:
       type:
@@ -75,10 +71,6 @@ on:
       reglages:
         description: 'site-web / html : réglages en JSON (facultatif), ex. {"fullscreen":true,"barsColor":"#FAFAFA","webTheme":"native"}'
         default: ""
-      use_native_ui:
-        description: "Utiliser base + patches experimentaux WebTheme (test uniquement)"
-        type: boolean
-        default: false
       atv_mode:
         description: "atv : action au lancement"
         type: choice
@@ -123,26 +115,14 @@ jobs:
           mkdir -p tools
           curl -fsSL -o tools/morphe.jar \
             "https://github.com/MorpheApp/morphe-desktop/releases/download/v${MORPHE_VERSION}/morphe-desktop-${MORPHE_VERSION}-all.jar"
-          USE_NATIVE_UI="${{ inputs.use_native_ui }}"
-          if [ "$USE_NATIVE_UI" = "true" ]; then
-            echo "Mode experimental native-ui : base + patches depuis release native-ui-experimental"
-            MPP_URL="https://github.com/${PATCHES_REPO}/releases/download/native-ui-experimental/patches-native-ui.mpp"
-            BASE_TAG="native-ui-experimental"
-          else
-            MPP_URL=$(curl -fsSL "https://raw.githubusercontent.com/${PATCHES_REPO}/main/patches-bundle.json" \
-              | python3 -c 'import json,sys; print(json.load(sys.stdin)["download_url"])')
-            BASE_TAG="base-apk"
-          fi
+          # Base WebTheme (native-ui-experimental) + patches webTheme.
+          # atv-base reste sur la release production base-apk.
+          echo "Base WebTheme : native-ui-experimental"
+          MPP_URL="https://github.com/${PATCHES_REPO}/releases/download/native-ui-experimental/patches-native-ui.mpp"
           echo "Patches : $MPP_URL"
-          echo "Base release : $BASE_TAG"
           curl -fsSL -o tools/patches.mpp "$MPP_URL"
-          for b in apk-base.apk atv-base.apk; do
-            if [ "$BASE_TAG" = "native-ui-experimental" ] && [ "$b" = "atv-base.apk" ]; then
-              curl -fsSL -o "tools/$b" "https://github.com/${PATCHES_REPO}/releases/download/base-apk/$b" || true
-            else
-              curl -fsSL -o "tools/$b" "https://github.com/${PATCHES_REPO}/releases/download/${BASE_TAG}/$b"
-            fi
-          done
+          curl -fsSL -o tools/apk-base.apk "https://github.com/${PATCHES_REPO}/releases/download/native-ui-experimental/apk-base.apk"
+          curl -fsSL -o tools/atv-base.apk "https://github.com/${PATCHES_REPO}/releases/download/base-apk/atv-base.apk"
           java -jar tools/morphe.jar options-create -p tools/patches.mpp -o tools/options-template.json
           echo "MPP_URL=$MPP_URL" >> "$GITHUB_ENV"
 
