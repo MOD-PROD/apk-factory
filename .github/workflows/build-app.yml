@@ -123,10 +123,13 @@ jobs:
           mkdir -p tools
           curl -fsSL -o tools/morphe.jar \
             "https://github.com/MorpheApp/morphe-desktop/releases/download/v${MORPHE_VERSION}/morphe-desktop-${MORPHE_VERSION}-all.jar"
-          echo "Base WebTheme : native-ui-experimental"
-          MPP_URL="https://github.com/${PATCHES_REPO}/releases/download/native-ui-experimental/patches-native-ui.mpp"
+          # Patches production (contiennent ModProd App / Réglages)
+          MPP_URL=$(curl -fsSL "https://raw.githubusercontent.com/${PATCHES_REPO}/main/patches-bundle.json" \
+            | python3 -c 'import json,sys; print(json.load(sys.stdin)["download_url"])')
           echo "Patches : $MPP_URL"
           curl -fsSL -o tools/patches.mpp "$MPP_URL"
+          # Base WebTheme (switch in-app par appui long)
+          echo "Base WebTheme : native-ui-experimental"
           curl -fsSL -o tools/apk-base.apk "https://github.com/${PATCHES_REPO}/releases/download/native-ui-experimental/apk-base.apk"
           curl -fsSL -o tools/atv-base.apk "https://github.com/${PATCHES_REPO}/releases/download/base-apk/atv-base.apk"
           java -jar tools/morphe.jar options-create -p tools/patches.mpp -o tools/options-template.json
