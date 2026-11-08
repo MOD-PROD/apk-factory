@@ -26,12 +26,12 @@
         "k": "e1",
         "type": "icon",
         "pos": "left",
-        "size": 65
+        "size": 40
       },
       {
         "k": "e2",
         "type": "title",
-        "pos": "left",
+        "pos": "center",
         "size": 30
       }
     ]
@@ -42,7 +42,7 @@
     "droite": "",
     "bas": ""
   },
-  "updated": "2026-11-08T11:48:22.651Z",
+  "updated": "2026-11-08T11:49:33.589Z",
   "menus": {
     "v": 1,
     "size": null,
