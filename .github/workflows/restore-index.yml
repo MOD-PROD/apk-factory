@@ -19,5 +19,12 @@ jobs:
           git config user.name "ModProd Bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html
-          git commit -m "fix(v1): restore full index.html from commit 483e7e6"
+          git commit -m "fix(v1): restore full index.html from commit 483e7e6" || echo "nothing to commit"
+          git pull --rebase origin main || true
+          # If rebase conflict on index.html, keep our restored version
+          if [ -f index.html ]; then
+            git checkout --ours index.html 2>/dev/null || true
+            git add index.html 2>/dev/null || true
+            git rebase --continue 2>/dev/null || true
+          fi
           git push origin HEAD:main
