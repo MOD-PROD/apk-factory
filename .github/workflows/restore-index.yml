@@ -1,0 +1,63 @@
+name: Restore index.html
+on:
+  workflow_dispatch:
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Restore full index.html from last good commit
+        run: |
+          set -euo pipefail
+          git checkout 483e7e6bcec1578d7a0934084ea7651779ca6638 -- index.html
+          python3 -c "
+from pathlib import Path
+p = Path('index.html')
+t = p.read_text()
+old_ui = '''      <div class=\"field\"><span>Orientation</span>
+        <div class=\"seg\" role=\"radiogroup\">
+          <label><input type=\"radio\" name=\"orientation\" value=\"portrait\" checked><span>Portrait</span></label>
+          <label><input type=\"radio\" name=\"orientation\" value=\"auto\"><span>Suit la rotation</span></label>
+        </div></div>
+
+      <label class=\"check\"><input type=\"checkbox\" name=\"fullscreen\" value=\"true\"><span>Plein \u00e9cran (masque la barre d'\u00e9tat)</span></label>'''
+new_ui = '''      <div class=\"field\"><span>Orientation</span>
+        <div class=\"seg\" role=\"radiogroup\">
+          <label><input type=\"radio\" name=\"orientation\" value=\"portrait\" checked><span>Portrait</span></label>
+          <label><input type=\"radio\" name=\"orientation\" value=\"auto\"><span>Suit la rotation</span></label>
+        </div></div>
+
+      <div class=\"field\"><span>Th\u00e8me des sites web</span>
+        <div class=\"seg\" role=\"radiogroup\">
+          <label><input type=\"radio\" name=\"webTheme\" value=\"auto\" checked><span>Auto</span></label>
+          <label><input type=\"radio\" name=\"webTheme\" value=\"native\"><span>Sombre natif</span></label>
+          <label><input type=\"radio\" name=\"webTheme\" value=\"css\"><span>CSS</span></label>
+          <label><input type=\"radio\" name=\"webTheme\" value=\"invert\"><span>Inversion</span></label>
+        </div>
+        <small class=\"hint\">Auto respecte le site. Natif utilise le dark mode Android. CSS et inversion injectent des styles (exp\u00e9rimental, selon le site).</small></div>
+
+      <label class=\"check\"><input type=\"checkbox\" name=\"fullscreen\" value=\"true\"><span>Plein \u00e9cran (masque la barre d'\u00e9tat)</span></label>'''
+old_fd = '''  fd.append(\"orientation\", f.orientation.value);
+  [\"fullscreen\", \"keepScreenOn\", \"zoom\", \"camera\", \"microphone\", \"location\", \"blockScreenshots\"]
+    .forEach(k => fd.append(k, f.elements[k].checked ? \"true\" : \"false\"));'''
+new_fd = '''  fd.append(\"orientation\", f.orientation.value);
+  fd.append(\"webTheme\", (f.webTheme && f.webTheme.value) || \"auto\");
+  [\"fullscreen\", \"keepScreenOn\", \"zoom\", \"camera\", \"microphone\", \"location\", \"blockScreenshots\"]
+    .forEach(k => fd.append(k, f.elements[k].checked ? \"true\" : \"false\"));'''
+if old_ui not in t:
+    raise SystemExit('orientation block not found')
+if old_fd not in t:
+    raise SystemExit('formData block not found')
+t = t.replace(old_ui, new_ui, 1).replace(old_fd, new_fd, 1)
+p.write_text(t)
+print('patched', len(t), 'webTheme', t.count('webTheme'))
+"
+          git config user.name "ModProd Bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "fix(v1): restore index.html and add webTheme form selector"
+          git push origin HEAD:main
