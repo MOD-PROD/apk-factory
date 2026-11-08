@@ -123,8 +123,6 @@ jobs:
           mkdir -p tools
           curl -fsSL -o tools/morphe.jar \
             "https://github.com/MorpheApp/morphe-desktop/releases/download/v${MORPHE_VERSION}/morphe-desktop-${MORPHE_VERSION}-all.jar"
-          # Base WebTheme (native-ui-experimental) + patches webTheme.
-          # atv-base reste sur la release production base-apk.
           echo "Base WebTheme : native-ui-experimental"
           MPP_URL="https://github.com/${PATCHES_REPO}/releases/download/native-ui-experimental/patches-native-ui.mpp"
           echo "Patches : $MPP_URL"
@@ -140,6 +138,7 @@ jobs:
           WORK_DIR: work
           OPTIONS_TEMPLATE: tools/options-template.json
           CALLBACK_TOKEN: ${{ secrets.CALLBACK_TOKEN }}
+          SITE_URL: ${{ vars.SITE_URL || 'https://apk-factory.modprod.app' }}
           IN_TYPE: ${{ inputs.type }}
           IN_APP_NAME: ${{ inputs.app_name }}
           IN_PACKAGE: ${{ inputs.package_name }}
@@ -222,7 +221,7 @@ jobs:
         if: inputs.job_id != ''
         env:
           CALLBACK_TOKEN: ${{ secrets.CALLBACK_TOKEN }}
-          SITE_URL: ${{ vars.SITE_URL || 'https://apk.modprod.app' }}
+          SITE_URL: ${{ vars.SITE_URL || 'https://apk-factory.modprod.app' }}
           JOB_ID: ${{ inputs.job_id }}
           APK_NAME: ${{ steps.prep.outputs.apk_name }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
@@ -241,6 +240,7 @@ jobs:
         if: failure() && inputs.job_id != ''
         env:
           CALLBACK_TOKEN: ${{ secrets.CALLBACK_TOKEN }}
+          SITE_URL: ${{ vars.SITE_URL || 'https://apk-factory.modprod.app' }}
           JOB_ID: ${{ inputs.job_id }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
