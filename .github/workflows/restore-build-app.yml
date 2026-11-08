@@ -10,13 +10,17 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
-      - name: Decode and write build-app.yml
+        with:
+          fetch-depth: 0
+      - name: Restore full build-app.yml and add use_native_ui
         run: |
           set -euo pipefail
-          base64 -d scripts/build-app.yml.b64 > .github/workflows/build-app.yml
-          wc -c .github/workflows/build-app.yml
+          # Last known complete workflow before truncation
+          git show 232424a8dd1a:.github/workflows/build-app.yml > .github/workflows/build-app.yml
+          python3 scripts/patch_build_app_native_ui.py
           grep -q "Patcher avec Morphe CLI" .github/workflows/build-app.yml
           grep -q "use_native_ui" .github/workflows/build-app.yml
+          wc -c .github/workflows/build-app.yml
           git config user.name "ModProd Bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add .github/workflows/build-app.yml
