@@ -5,8 +5,6 @@ name: Fabriquer une appli
 #   site-web → apk-base.apk + « ModProd App » (adresse web) + « ModProd Réglages »
 #   html     → apk-base.apk + « ModProd App » (page .html ou .zip) + « ModProd Réglages »
 #   atv      → atv-base.apk + « ATV Launcher »
-# Phase 1 : lancement à la main (Actions → Fabriquer une appli → Run workflow),
-# l'APK est donné en artefact du run (7 jours).
 #
 # Secrets : ANDROID_KEYSTORE_B64 (.p12 en base64), ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS.
 
@@ -35,6 +33,9 @@ on:
         type: string
         default: ""
       smoke_r2:
+        type: boolean
+        default: false
+      use_native_ui:
         type: boolean
         default: false
   workflow_dispatch:
@@ -66,11 +67,18 @@ on:
         description: "html : lien https:// vers config.js (facultatif)"
         default: ""
       icon_url:
-        description: "Icône PNG carrée, lien https:// (facultatif ; site-web : vide = icône du site)"
+        description: "Icône PNG carrée, lien https:// (facultatif)"
         default: ""
       reglages:
-        description: 'site-web / html : réglages en JSON (facultatif), ex. {"fullscreen":true,"barsColor":"#FAFAFA","webTheme":"native"}'
+        description: 'site-web / html : réglages JSON, ex. {"webTheme":"native"}'
         default: ""
+      job_id:
+        description: "Identifiant de tâche site (laisser vide en lancement manuel)"
+        default: ""
+      use_native_ui:
+        description: "(ignoré) base WebTheme toujours utilisée"
+        type: boolean
+        default: false
       atv_mode:
         description: "atv : action au lancement"
         type: choice
