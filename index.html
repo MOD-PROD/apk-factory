@@ -1034,6 +1034,15 @@ a.btn{text-decoration:none}
           <label><input type="radio" name="orientation" value="auto"><span>Suit la rotation</span></label>
         </div></div>
 
+      <div class="field"><span>Thème des sites web</span>
+        <div class="seg" role="radiogroup">
+          <label><input type="radio" name="webTheme" value="auto" checked><span>Auto</span></label>
+          <label><input type="radio" name="webTheme" value="native"><span>Sombre natif</span></label>
+          <label><input type="radio" name="webTheme" value="css"><span>CSS</span></label>
+          <label><input type="radio" name="webTheme" value="invert"><span>Inversion</span></label>
+        </div>
+        <small class="hint">Auto respecte le site. Natif utilise le dark mode Android. CSS et inversion injectent des styles (expérimental, selon le site).</small></div>
+
       <label class="check"><input type="checkbox" name="fullscreen" value="true"><span>Plein écran (masque la barre d'état)</span></label>
       <label class="check"><input type="checkbox" name="keepScreenOn" value="true"><span>Écran toujours allumé</span></label>
       <label class="check"><input type="checkbox" name="zoom" value="true"><span>Zoom à deux doigts</span></label>
@@ -1480,6 +1489,7 @@ webForm.addEventListener("submit", e => {
     if(files.cfg) fd.append("config", files.cfg, "config.js");
   }else fd.append("webUrl", url);
   fd.append("orientation", f.orientation.value);
+  fd.append("webTheme", (f.webTheme && f.webTheme.value) || "auto");
   ["fullscreen", "keepScreenOn", "zoom", "camera", "microphone", "location", "blockScreenshots"]
     .forEach(k => fd.append(k, f.elements[k].checked ? "true" : "false"));
   f.querySelectorAll("[data-color]").forEach(c => { if(c.checked) fd.append(c.dataset.color, f.elements[c.dataset.color].value); });
