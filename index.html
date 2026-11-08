@@ -14,6 +14,1721 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=IBM+Plex+Sans:wght@400;600&display=swap" rel="stylesheet">
 <style>
-/* PLACEHOLDER - will replace with full content */
+/* =====================================================================
+   DESIGN — uniquement des variables. La console peut les remplacer
+   (section « design » de config-site.json). Sans config : ces valeurs.
+   ===================================================================== */
+:root{
+  --fond:#141a21;            /* fond de page            */
+  --fond2:#0b0e12;           /* bas du dégradé de fond  */
+  --surface:#1b232c;         /* cartes, panneaux        */
+  --surface2:#222c37;        /* champs, survol          */
+  --bord:#2c3742;            /* bordures                */
+  --texte:#e6e9ee;           /* texte principal         */
+  --texte2:#9aa6b2;          /* texte secondaire        */
+  --accent:#f08a24;          /* couleur de la marque    */
+  --sur-accent:#141a21;      /* texte sur l'accent      */
+  --alerte:#e5484d;
+  --arrondi:10px;
+  --police-titres:"Chakra Petch",system-ui,sans-serif;
+  --police-texte:"IBM Plex Sans",system-ui,sans-serif;
+  --taille:15px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{
+  background:linear-gradient(180deg,var(--fond),var(--fond2)) fixed;
+  color:var(--texte);font:var(--taille)/1.5 var(--police-texte);
+  -webkit-tap-highlight-color:transparent;
+  padding-bottom:calc(64px + env(safe-area-inset-bottom));
+}
+h1,h2,h3{font-family:var(--police-titres);text-transform:uppercase;letter-spacing:.04em;margin:0}
+button{font:inherit;color:inherit;cursor:pointer}
+a{color:var(--accent)}
+[hidden]{display:none!important}
+
+/* ---- En-tête ---- */
+.top{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:10px;
+  padding:calc(10px + env(safe-area-inset-top)) 16px 10px;background:color-mix(in srgb,var(--fond) 92%,transparent);
+  backdrop-filter:blur(8px);border-bottom:1px solid var(--bord)}
+.top img{width:34px;height:34px;border-radius:8px}
+.top h1{font-size:18px;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hver{font:600 11px var(--police-texte,system-ui);color:var(--texte-2,#98a5b3);border:1px solid rgba(255,255,255,.14);border-radius:999px;padding:1px 7px}
+.badge{font:700 11px var(--police-titres);letter-spacing:.08em;color:var(--sur-accent);background:var(--accent);
+  padding:2px 7px;border-radius:999px}
+.icon-btn{background:none;border:1px solid var(--bord);border-radius:var(--arrondi);width:38px;height:38px;
+  display:grid;place-items:center}
+
+/* ---- Bandeaux ---- */
+.banner{margin:12px 16px 0;padding:10px 12px;border-radius:var(--arrondi);display:flex;gap:10px;align-items:flex-start;
+  background:color-mix(in srgb,var(--accent) 14%,var(--surface));border:1px solid color-mix(in srgb,var(--accent) 45%,transparent)}
+.banner p{margin:0;flex:1;white-space:pre-line}
+.banner .x{background:none;border:0;color:var(--texte2);font-size:18px;line-height:1;padding:0 2px}
+
+/* ---- Contenu ---- */
+main{padding:16px;max-width:720px;margin:0 auto}
+.card{background:var(--surface);border:1px solid var(--bord);border-radius:var(--arrondi);padding:16px;margin-bottom:14px}
+.card h2{font-size:15px;color:var(--accent);margin-bottom:8px}
+.card p{margin:.4em 0;color:var(--texte2)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;padding:0 18px;
+  border-radius:var(--arrondi);border:1px solid var(--accent);background:var(--accent);color:var(--sur-accent);font-weight:600}
+.btn.ghost{background:none;color:var(--accent)}
+.lock{opacity:.55}
+.lock::after{content:" 🔒"}
+
+/* ---- Écran fermé ---- */
+.closed{min-height:70vh;display:grid;place-items:center;text-align:center;padding:24px}
+.closed h2{font-size:20px;margin-bottom:8px}
+
+/* ---- Menu du bas ---- */
+nav.bottom{position:fixed;left:0;right:0;bottom:0;z-index:5;display:flex;border-top:1px solid var(--bord);
+  background:var(--surface);padding-bottom:env(safe-area-inset-bottom)}
+nav.bottom button{flex:1;background:none;border:0;padding:8px 4px 10px;font-size:12px;color:var(--texte2);
+  display:flex;flex-direction:column;align-items:center;gap:2px}
+nav.bottom button[aria-current="page"]{color:var(--accent)}
+nav.bottom .ico{font-size:20px;line-height:1}
+
+/* ---- Autres applis ---- */
+.apps{list-style:none;margin:0;padding:0}
+.apps li a{display:flex;gap:12px;align-items:center;padding:10px 0;color:inherit;text-decoration:none;border-top:1px solid var(--bord)}
+.apps li:first-child a{border-top:0}
+.apps img{width:40px;height:40px;border-radius:9px;background:var(--surface2)}
+.apps b{display:block}
+.apps small{color:var(--texte2)}
+.apps .soon{opacity:.5;pointer-events:none}
+.foot{text-align:center;color:var(--texte2);font-size:12px;margin:24px 0 8px}
+
+/* ---- Fabrique : types d'applis ---- */
+.types{display:grid;gap:10px}
+.type{display:flex;gap:12px;align-items:center;width:100%;text-align:left;padding:12px;border-radius:var(--arrondi);
+  background:var(--surface2);border:1px solid var(--bord)}
+.type .ti{font-size:24px;width:36px;text-align:center}
+.type b{display:block}
+.type small{color:var(--texte2)}
+.type[disabled]{opacity:.5;cursor:default}
+.type:not([disabled]):hover{border-color:var(--accent)}
+
+/* ---- Formulaires ---- */
+.field{display:block;margin:0 0 14px}
+.field > span{display:block;font-weight:600;margin-bottom:5px}
+.field small{display:block;color:var(--texte2);font-size:13px;margin-top:4px}
+.field input[type=text],.field input[type=url],.field input[type=number]{width:100%;min-height:44px;padding:8px 12px;font:inherit;
+  color:var(--texte);background:var(--surface2);border:1px solid var(--bord);border-radius:var(--arrondi)}
+.field input:focus{outline:2px solid var(--accent);outline-offset:1px}
+.field input[aria-invalid=true]{border-color:var(--alerte)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg label{flex:1 1 auto;min-width:0}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg span{display:block;text-align:center;padding:10px 8px;border-radius:var(--arrondi);border:1px solid var(--bord);
+  background:var(--surface2);font-size:14px;cursor:pointer}
+.seg input:checked + span{border-color:var(--accent);color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,var(--surface2))}
+.seg input:focus-visible + span{outline:2px solid var(--accent)}
+.check{display:flex;gap:10px;align-items:center;margin:0 0 14px;cursor:pointer}
+.check input{width:20px;height:20px;accent-color:var(--accent)}
+.pick{display:flex;gap:12px;align-items:center}
+.pick canvas{background:var(--surface2);border:1px dashed var(--bord);border-radius:8px;flex:none}
+.pick .pb{display:flex;flex-direction:column;gap:6px;min-width:0}
+.pick .btn{min-height:38px;padding:0 12px;font-size:14px}
+details.more{margin:0 0 14px}
+details.more summary{cursor:pointer;color:var(--texte2);margin-bottom:10px}
+.errs{margin:0 0 14px;padding:10px 12px 10px 28px;border-radius:var(--arrondi);color:var(--texte);
+  background:color-mix(in srgb,var(--alerte) 15%,var(--surface));border:1px solid color-mix(in srgb,var(--alerte) 50%,transparent)}
+.wide{width:100%}
+.colors .check{justify-content:flex-start}
+.colors .check span{flex:1}
+.colors input[type=color]{width:46px;height:32px;padding:0;border:1px solid var(--bord);border-radius:6px;background:none}
+.colors input[type=color]:disabled{opacity:.35}
+.hint{display:block;color:var(--texte2);font-size:13px}
+.fname{color:var(--texte2);font-size:14px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+a.btn{text-decoration:none}
+
+/* ---- Suivi et résultat ---- */
+.progress{display:flex;gap:12px;align-items:center}
+.spin{width:22px;height:22px;border-radius:50%;border:3px solid var(--bord);border-top-color:var(--accent);animation:spin 1s linear infinite;flex:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+.result{display:grid;gap:12px;justify-items:center;text-align:center}
+.result .qr{background:#fff;padding:10px;border-radius:8px;line-height:0}
+.result .qr img{width:200px;height:200px;image-rendering:pixelated}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;word-break:break-all;color:var(--texte2)}
+.jobs{list-style:none;margin:0;padding:0}
+.jobs li{display:flex;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--bord)}
+.jobs li:first-child{border-top:0}
+.jobs .jn{flex:1;min-width:0}
+.jobs .jn b,.jobs .jn small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.jobs small{color:var(--texte2)}
+.st{font-size:12px;padding:2px 8px;border-radius:999px;border:1px solid var(--bord);white-space:nowrap}
+.st.done{color:#3fb950;border-color:#3fb95066}
+.st.failed{color:var(--alerte);border-color:color-mix(in srgb,var(--alerte) 50%,transparent)}
 </style>
-</head><body>TEST</body></html>
+<!-- MODPROD-MENU : début (copie de modprod-app-template/modprod-menu.js, ne pas modifier ici) -->
+<script>
+/* MODPROD-MENU v1 — menus réglables des applis ModProd (copie identique dans chaque appli ; original : modprod-app-template/modprod-menu.js)
+   Réglés dans AppMod → appli → « Menus », publiés dans config-site.json → menus :
+   {
+     "v": 1, "size": 20, "color": "", "active": "", "bg": "",
+     "top":    { "pc": "both", "mobile": "off",  "items": [],       ← Top menu
+                 "place": "below" },                                  ← sous l'en-tête, ou dans l'en-tête : "head-left" · "head-center" · "head-right"
+     "bottom": { "pc": "off",  "mobile": "icon", "items": [] },     ← Bottom menu
+     "side":   { "pc": "off",  "mobile": "off",  "items": [],       ← Slider menu (☰)
+                 "btn": "auto", "from": "left" }
+   side.btn (bouton ☰) : "auto" (dans le menu du haut s'il est affiché, sinon en bas à gauche) · "header-left" / "header-right"
+     (dans l'entête de l'appli, option burgerIn) · "top-left" · "top-right" · "bottom-left" · "bottom-right" (bouton flottant).
+   side.from : "left" ou "right" = côté d'où sort le menu latéral.
+   }
+   pc / mobile : "both" (icône + texte) · "icon" (icône seule) · "text" (texte seul) · "off" (masqué). PC = 900 px et plus.
+   Anciens réglages encore lus : "on", "show" (all · pc · mobile) et "text" (true / false), utilisés si pc / mobile manquent.
+   items vide = boutons de l'appli (contenu par défaut). Élément : {"t":"btn","id":"settings","label":"","icon":"","color":""}
+   ou {"t":"link","url":"https://…","label":"Site","icon":"globe","color":"","tab":true}.
+   "glyph" (facultatif, bouton ou lien) : icône de la bibliothèque Asset Library {"family","code","font"} ; une action peut aussi avoir glyph.
+   Les 3 menus peuvent être affichés ensemble ou séparément, avec un réglage propre au PC et au smartphone.
+   Pages de l'appli ouvertes en fenêtre plein écran (<dialog> modal) : les menus s'y affichent aussi (option pages / page / closePage).
+   Règle d'or : sans réglage (ou si aucun menu n'est visible sur l'écran), l'appli garde son menu d'origine.
+   Utilisation dans l'appli :
+     ModProdMenu.init({
+       config: cfg.menus,                                // objet menus de config-site.json (ou undefined)
+       actions: [{id:"settings", label:"Réglages", icon:"gear", el:"#btnSettings", keep:true}, …],
+       //   el : élément natif cliqué (son état « actif » est lu sur aria-current / aria-pressed / .on / .active)
+       //   run(): action à la place d'un élément ; active(): état actif ; keep : toujours présent dans un menu visible
+       //   live : l'icône suit celle de l'élément d'origine ; hidden : pas dans le contenu par défaut
+       native: ["#nav"],                                 // menu(s) d'origine masqué(s) quand les menus réglés s'affichent
+       topAfter: "header",                               // le menu du haut se place sous cet élément (sinon en haut de page)
+       topIn: "header .wrap",                            // ou dedans (entête collée en haut : le menu reste visible)
+       burgerIn: "header .top",                          // facultatif : rangée de l'entête où placer le bouton ☰ (side.btn "header-…")
+       header: {row: "header .top", parts: {icon: "#logo", title: "#ttl", subtitle: "#sub", tag: "#beta", version: "#ver"},
+                hide: ["#gear"]},                       // facultatif : en-tête réglable (config-site.json → header.layout), voir plus bas
+     Quand un emplacement réglé est affiché : html.mpm-on (l'appli masque ses menus d'origine recréés, ex. onglets).
+       accent: "#f08a24", bg: "#161c23", fg: "#e8edf2",  // couleurs par défaut de l'appli
+       closePage: function(dlg){ … }                     // facultatif : fermer une page plein écran (défaut : dlg.close())
+     });
+     Action : page:"#list" = la page (dialog) qu'ouvre ce bouton ; un bouton du menu ferme les autres pages ouvertes.
+     ModProdMenu.apply(nouveauxReglages) pour réappliquer (ex. après lecture de la config en ligne).
+   En-tête réglable (config-site.json → header.layout, écran « En-tête » d'AppMod) : liste d'éléments
+     {"k": "e1", "type": "icon" | "title" | "subtitle" | "tag" | "version" | "button" | "text", "id": "<bouton de l'appli>" (button),
+      "text": "…" et "color" (text : texte libre ou repris de la fiche, plusieurs possibles),
+      "pos": "left" | "center" | "right" | "above" | "below", "ref": "<k d'un autre élément>" (above / below),
+      "size": nombre en px (taille de l'icône / du bouton, hauteur d'une image, taille du texte) ou "s" | "m" | "l" (ancien réglage, encore lu)}
+     Les éléments de l'appli (opt.header.parts) sont déplacés dans l'en-tête réglé ; les boutons viennent de opt.actions.
+     Sans header.layout : en-tête d'origine. Un bouton indispensable (keep) absent des menus visibles est ajouté à droite.
+     ModProdMenu.header(config.header) pour (ré)appliquer.
+   Icônes des boutons : lues dans la collection d'assets de l'appli, dans SON dépôt (assets/assets.json sur son
+   propre site, élément "btn-<identifiant>"), option assets: "" (adresse du site, "" = même site). Elles remplacent
+   l'icône des boutons d'origine et des menus réglés ; une icône SVG prend la couleur du bouton (actif, couleur perso).
+   Sans réseau : dernière collection connue ; fichier absent : icône d'origine. Boutons « live » (ex. sauvegarde) non remplacés.
+   Autres images et icônes de l'appli : élément de la collection avec "el" (sélecteur CSS, ex. "#logo" ou "#closeList, #closeDash") :
+   <img> → son image est remplacée (après chargement, sans clignotement) ; autre élément → son icône (svg) est remplacée. */
+(function(){
+  if(window.ModProdMenu) return;
+  var ICONS = {
+    gear: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+    sliders: '<path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/>',
+    list: '<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',
+    box: '<path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/>',
+    cube: '<path d="M12 2 3 7v10l9 5 9-5V7z"/><path d="m3 7 9 5 9-5M12 12v10"/>',
+    file: '<path d="M6 2h9l5 5v15H6z"/><path d="M14 2v6h6M9 13h7M9 17h7M9 9h2"/>',
+    receipt: '<path d="M5 2h14v20l-3-2-2 2-2-2-2 2-2-2-3 2z"/><path d="M9 7h6M9 11h6M9 15h4"/>',
+    chart: '<path d="M4 20h16M7 16v-5M12 16V6M17 16v-8"/>',
+    pie: '<path d="M21 12A9 9 0 1 1 12 3v9z"/><path d="M15 3.5A9 9 0 0 1 20.5 9H15z"/>',
+    trend: '<path d="m3 17 6-6 4 4 8-8"/><path d="M15 7h6v6"/>',
+    calc: '<rect x="5" y="2" width="14" height="20" rx="2"/><path d="M8 6h8M8 11h.01M12 11h.01M16 11h.01M8 15h.01M12 15h.01M16 15h.01M8 19h.01M12 19h4"/>',
+    printer: '<path d="M6 9V2h12v7"/><rect x="2" y="9" width="20" height="9" rx="2"/><path d="M6 14h12v8H6z"/>',
+    tag: '<path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.5"/>',
+    euro: '<path d="M18 7a7 7 0 1 0 0 10"/><path d="M4 10h10M4 14h10"/>',
+    wallet: '<path d="M3 7a2 2 0 0 1 2-2h13v4"/><path d="M3 7v11a2 2 0 0 0 2 2h15V9H5a2 2 0 0 1-2-2z"/><path d="M16 14h.01"/>',
+    folder: '<path d="M3 6a2 2 0 0 1 2-2h4l2 3h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
+    user: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+    home: '<path d="M3 11 12 3l9 8"/><path d="M5 10v10h14V10"/>',
+    star: '<path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z"/>',
+    disk: '<path d="M5 3h11l3 3v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M7 3v5h8V3"/><circle cx="12" cy="15" r="2.6"/>',
+    cloud: '<path d="M7 18h10a4 4 0 0 0 .6-7.95A6 6 0 0 0 6.1 9.5 4.3 4.3 0 0 0 7 18z"/>',
+    link: '<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/>',
+    globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>',
+    mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>',
+    image: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 17-5-5-9 8"/>',
+    palette: '<path d="M12 3a9 9 0 1 0 0 18c1 0 1.6-.8 1.6-1.6 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-.9.7-1.6 1.6-1.6H16a5 5 0 0 0 5-5C21 6.6 17 3 12 3z"/><circle cx="7.5" cy="11" r="1"/><circle cx="10" cy="7.5" r="1"/><circle cx="14.5" cy="7.5" r="1"/>',
+    type: '<path d="M4 7V4h16v3M9 20h6M12 4v16"/>',
+    layers: '<path d="m12 2 10 5-10 5L2 7z"/><path d="m2 12 10 5 10-5M2 17l10 5 10-5"/>',
+    download: '<path d="M12 3v12M7 10l5 5 5-5M4 21h16"/>',
+    share: '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/>',
+    help: '<circle cx="12" cy="12" r="9"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01"/>',
+    grid: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
+    book: '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/>',
+    brush: '<path d="M18.4 2.6a2 2 0 0 1 2.9 2.9L11 15.8 8.2 13z"/><path d="M7 14c-2 0-3 1.5-3 3 0 1.4-1 2.5-2 3 3 1 7 0 8-3z"/>',
+    back: '<path d="M19 12H5M12 19l-7-7 7-7"/>',
+    search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/>',
+    plus: '<path d="M12 5v14M5 12h14"/>',
+    info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7h.01"/>',
+    menu: '<path d="M4 6h16M4 12h16M4 18h16"/>'
+  };
+  var HEX = /^#([0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i, KINDS = ["top", "bottom", "side"], MODES = ["both", "icon", "text", "off"];
+  var NAMES = {top: "Top menu", bottom: "Bottom menu", side: "Slider menu"};
+  var opt = null, cfg = null, hcfg = null, hdr = null, menuIds = [], built = [], mq = window.matchMedia ? matchMedia("(min-width: 900px)") : null, timer = null, ASSETS = {};
+  var esc = function(t){ return String(t == null ? "" : t).replace(/[&<>"]/g, function(x){ return {"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[x]; }); };
+  var hex = function(c){ return typeof c === "string" && HEX.test(c.trim()) ? c.trim() : ""; };
+  // Icônes de la bibliothèque commune Asset Library (polices d'icônes) : {"family", "code", "font": "fonts/….ttf"}
+  var LIB = "https://asset-library.modprod.app/", FACES = {};
+  var okGlyph = function(g){ return !!(g && /^[A-Za-z0-9_-]{1,40}$/.test(g.family || "") && /^[0-9a-f]{2,6}$/i.test(g.code || "") && /^fonts\/[A-Za-z0-9._-]{1,80}\.ttf$/.test(g.font || "")); };
+  function glyphHtml(g){
+    if(!FACES[g.family]){
+      FACES[g.family] = 1; var st = document.getElementById("mpm-faces");
+      if(!st){ st = document.createElement("style"); st.id = "mpm-faces"; (document.head || document.documentElement).appendChild(st); }
+      st.textContent += '@font-face{font-family:"mpg-' + g.family + '";src:url("' + LIB + g.font + '") format("truetype");font-display:block}';
+    }
+    return '<i class="mpm-gl" aria-hidden="true" style="font-family:\'mpg-' + g.family + '\'">' + String.fromCodePoint(parseInt(g.code, 16)) + "</i>";
+  }
+  var okUrl = function(u){ return /^(https:\/\/[^\s"<>]+|mailto:[^\s"<>]+)$/i.test(String(u || "")); };
+  var el = function(s){ return typeof s === "string" ? document.querySelector(s) : s || null; };
+  var isPc = function(){ return mq ? mq.matches : true; };
+  var svg = function(inner){ return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + inner + "</svg>"; };
+
+  function css(){
+    if(document.getElementById("mpm-css")) return;
+    var s = document.createElement("style"); s.id = "mpm-css";
+    s.textContent =
+      ".mpm{--mpm-s:20px;display:flex;gap:4px;align-items:stretch;background:var(--mpm-bg);color:var(--mpm-fg);font:600 12px/1.15 system-ui,-apple-system,'Segoe UI',sans-serif;box-sizing:border-box;z-index:55}" +
+      ".mpm *{box-sizing:border-box}.mpm[hidden],.mpm-native-off,.mpm-burger[hidden]{display:none!important}" +
+      ".mpm-b{all:unset;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 10px;border-radius:8px;color:var(--mc,var(--mpm-fg));text-decoration:none;white-space:nowrap;min-width:0}" +
+      ".mpm-b svg{width:var(--mpm-s);height:var(--mpm-s);flex:none}.mpm-b:hover{background:rgba(255,255,255,.06)}.mpm-b:focus-visible{outline:2px solid var(--mpm-active)}" +
+      ".mpm-b.on{color:var(--mpm-active);background:rgba(255,255,255,.07)}.mpm-b span{overflow:hidden;text-overflow:ellipsis}" +
+      ".mpm-top.in{position:static;border-bottom:0;padding-left:0;padding-right:0;background:transparent}" +
+      ".mpm-top.hd{position:static;flex:1 1 45%;min-width:0;border:0;padding:0 4px;background:transparent;overflow-x:auto;align-items:center}.mpm-top.hd.hl{justify-content:flex-start}.mpm-top.hd.hc{justify-content:center}.mpm-top.hd.hr{justify-content:flex-end}" +
+      ".mpm-top{position:sticky;top:0;padding:6px max(10px,env(safe-area-inset-left));overflow-x:auto;scrollbar-width:none;border-bottom:1px solid rgba(255,255,255,.08)}.mpm-top::-webkit-scrollbar{display:none}" +
+      ".mpm-bottom{position:fixed;left:0;right:0;bottom:0;justify-content:space-around;padding:4px 4px calc(4px + env(safe-area-inset-bottom));border-top:1px solid rgba(255,255,255,.08);z-index:56}" +
+      ".mpm-bottom .mpm-b{flex:1 1 0;flex-direction:column;gap:3px;padding:6px 2px;font-size:11px}" +
+      ".mpm-side{position:fixed;top:0;bottom:0;left:0;width:min(280px,84vw);flex-direction:column;padding:calc(14px + env(safe-area-inset-top)) 10px 14px;transform:translateX(-102%);transition:transform .2s ease;overflow-y:auto;z-index:70;box-shadow:12px 0 30px rgba(0,0,0,.4)}" +
+      ".mpm-side.open{transform:none}.mpm-side .mpm-b{justify-content:flex-start;padding:11px 12px;font-size:14px}.mpm-side .mpm-x{align-self:flex-end}" +
+      ".mpm-scrim{position:fixed;inset:0;background:rgba(10,15,20,.55);z-index:69}.mpm-scrim[hidden]{display:none}" +
+      ".mph{--mpm-s:20px;display:flex;align-items:center;gap:8px;flex:1 1 auto;min-width:0}.mph-z{display:flex;align-items:center;gap:8px;min-width:0}" +
+      ".mph-l{flex:1 1 0;justify-content:flex-start}.mph-c{flex:0 1 auto;justify-content:center}.mph-r{flex:1 1 0;justify-content:flex-end}" +
+      ".mph-s{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-width:0}.mph-s:has(>.mph-btn:only-child){flex:none}.mph-c .mph-s{align-items:center;text-align:center}.mph-r .mph-s{align-items:flex-end;text-align:right}" +
+      ".mph-txt{font-weight:600;font-size:15px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;max-width:100%}" +
+      ".mph [data-mph=title]{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;max-width:100%}.mph-hide{display:none!important}.mph-btn{border:1px solid rgba(255,255,255,.12);background:var(--mpm-bg);padding:0;width:38px;height:38px;flex:none}.mph-btn span:not(.mpm-ai){display:none}" +
+      ".mph-btn.mph-sz-s{width:30px;height:30px;--mpm-s:16px}.mph-btn.mph-sz-l{width:46px;height:46px;--mpm-s:24px}" +
+      "img[data-mph].mph-sz-s{width:24px!important;height:24px!important}img[data-mph].mph-sz-m{width:34px!important;height:34px!important}img[data-mph].mph-sz-l{width:46px!important;height:46px!important}" +
+      "[data-mph=title].mph-sz-s{font-size:15px!important}[data-mph=title].mph-sz-m{font-size:20px!important}[data-mph=title].mph-sz-l{font-size:27px!important}" +
+      "[data-mph=subtitle].mph-sz-s{font-size:11px!important}[data-mph=subtitle].mph-sz-l{font-size:14px!important}" +
+      "[data-mph=tag].mph-sz-s{font-size:8.5px!important}[data-mph=tag].mph-sz-l{font-size:12.5px!important;padding:3px 9px!important}" +
+      "[data-mph=version].mph-sz-s{font-size:9.5px!important}[data-mph=version].mph-sz-l{font-size:13px!important}" +
+      ".mpm-burger{all:unset;cursor:pointer;display:flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:10px;color:var(--mpm-fg);background:var(--mpm-bg);flex:none}" +
+      ".mpm-burger svg{width:22px;height:22px}.mpm-burger.float{position:fixed;left:max(10px,env(safe-area-inset-left));bottom:calc(14px + env(safe-area-inset-bottom));z-index:57;box-shadow:0 4px 14px rgba(0,0,0,.35)}" +
+      "body.mpm-has-bottom .mpm-burger.float{bottom:calc(70px + env(safe-area-inset-bottom))}" +
+      ".mpm-burger.float.p-tl,.mpm-burger.float.p-tr,body.mpm-has-bottom .mpm-burger.float.p-tl,body.mpm-has-bottom .mpm-burger.float.p-tr{top:calc(10px + env(safe-area-inset-top));bottom:auto}" +
+      ".mpm-burger.float.p-tr,.mpm-burger.float.p-br{left:auto;right:max(10px,env(safe-area-inset-right))}" +
+      ".mpm-side.right{left:auto;right:0;transform:translateX(102%);box-shadow:-12px 0 30px rgba(0,0,0,.4)}.mpm-side.right.open{transform:none}.mpm-side.right .mpm-x{align-self:flex-start}" +
+      ".mpm-ai{display:inline-block;flex:none;width:var(--mpm-s,1.25em);height:var(--mpm-s,1.25em);background:currentColor;-webkit-mask:var(--u) center/contain no-repeat;mask:var(--u) center/contain no-repeat}" +
+      "img.mpm-ai{background:none;-webkit-mask:none;mask:none;object-fit:contain}" +
+      ".mpm.notext .mpm-b span:not(.mpm-ai){display:none}.mpm-bottom.notext .mpm-b{padding:10px 2px}" +
+      ".mpm-gl{display:inline-block;flex:none;font-style:normal;font-weight:400;font-size:var(--mpm-s,1.25em);line-height:1;width:var(--mpm-s,1.25em);text-align:center}" +
+      ".mpm.noicon .mpm-b>svg,.mpm.noicon .mpm-b>.mpm-ai,.mpm.noicon .mpm-b>.mpm-gl{display:none}.mpm-bottom.noicon .mpm-b{padding:12px 2px;font-size:12px}" +
+      ".mpm-top.inpage{position:fixed;top:0;left:0;right:0;z-index:5;padding:6px max(10px,env(safe-area-inset-left));padding-top:calc(6px + env(safe-area-inset-top));background:var(--mpm-bg);border-bottom:1px solid rgba(255,255,255,.08)}" +
+      "dialog.mpm-pg{padding-bottom:calc(64px + env(safe-area-inset-bottom))}dialog.mpm-pgt{padding-top:var(--mpm-th,52px)}" +
+      "dialog .mpm-bottom,dialog .mpm-side,dialog .mpm-burger.float{position:fixed}dialog .mpm-scrim{position:fixed}" +
+      "@media (prefers-reduced-motion:reduce){.mpm-side{transition:none}}";
+    document.head.appendChild(s);
+  }
+  // Nettoyage côté appli (même règles que le serveur AppMod) : un réglage invalide est ignoré
+  var HTYPES = ["icon", "title", "subtitle", "tag", "version", "button", "text"], HPOS = ["left", "center", "right", "above", "below"];
+  // Tailles de l'en-tête en px : [S, M, L, min, max] par type d'élément (S/M/L = anciens réglages)
+  var HSZ = {text: [12, 15, 20, 8, 48], icon: [24, 34, 46, 16, 96], button: [30, 38, 46, 24, 72], title: [15, 20, 27, 10, 48], subtitle: [11, 13, 14, 8, 32], tag: [9, 11, 13, 7, 24], version: [10, 11, 13, 7, 24]};
+  function hsize(t, v){
+    var r = HSZ[t] || HSZ.title, n = typeof v === "number" ? v : typeof v === "string" && /^\d+(\.\d+)?$/.test(v) ? +v : NaN;
+    if(isFinite(n)) return Math.round(Math.max(r[3], Math.min(r[4], n)));
+    return ["s", "m", "l"].indexOf(v) >= 0 ? v : "m";
+  }
+  // Taille en px : posée en style (gardé pour être retiré si l'en-tête est réglé autrement)
+  function hpx(n, t, px){
+    var st = n.style, imp = "important";
+    if(t === "icon" && n.tagName !== "IMG"){   // icône dans un conteneur (ex. lien) : le conteneur suit la hauteur et la forme de l'image
+      var im = n.querySelector("img");
+      st.setProperty("height", px + "px", imp); st.setProperty("width", im ? "auto" : px + "px", imp); st.setProperty("max-width", "100%", imp); st.setProperty("min-width", Math.min(px, 34) + "px", imp); st.setProperty("flex", "0 1 auto", imp);
+      if(im){ hdr.styled.push({n: im, st: im.getAttribute("style")}); hpx(im, "icon", px); } else st.setProperty("font-size", px + "px", imp);
+      return;
+    }
+    if(t === "button"){ st.setProperty("width", px + "px", imp); st.setProperty("height", px + "px", imp); st.setProperty("flex", "none", imp); st.setProperty("--mpm-s", Math.round(px * .52) + "px"); }
+    else if(n.tagName === "IMG" && t === "icon"){   // hauteur fixe, largeur selon l'image (carrée ou en longueur)
+      st.setProperty("height", px + "px", imp); st.setProperty("width", "auto", imp); st.setProperty("min-width", px + "px", imp); st.setProperty("max-width", "100%", imp);
+      st.setProperty("flex", "0 1 auto", imp); st.setProperty("object-fit", "contain", imp); st.setProperty("object-position", "left center", imp); }   // trop large pour l'écran : rétrécie
+    else if(n.tagName === "IMG"){ st.setProperty("height", px + "px", imp); st.setProperty("width", "auto", imp); st.setProperty("max-width", "100%", imp);
+      st.setProperty("min-width", "0", imp); st.setProperty("object-fit", "contain", imp); st.setProperty("object-position", "left center", imp); }   // image (logo en titre) : hauteur, rétrécie si la place manque
+    else st.setProperty("font-size", px + "px", imp);
+  }
+  function cleanHeader(h){
+    if(!h || typeof h !== "object" || !Array.isArray(h.layout) || !h.layout.length) return null;
+    var seen = {}, out = [];
+    h.layout.slice(0, 16).forEach(function(e, i){
+      if(!e || HTYPES.indexOf(e.type) < 0) return;
+      var k = /^[a-z0-9_-]{1,20}$/i.test(e.k || "") && !seen[e.k] ? e.k : "e" + i; seen[k] = 1;
+      var o = {k: k, type: e.type, pos: HPOS.indexOf(e.pos) >= 0 ? e.pos : "left", ref: String(e.ref || ""), size: hsize(e.type, e.size)};
+      if(e.type === "button"){ if(!/^[a-z0-9_-]{1,30}$/i.test(e.id || "")) return; o.id = e.id; }
+      if(e.type === "text"){ o.text = String(e.text || "").replace(/[<>]/g, "").slice(0, 160); if(!o.text.trim()) return; o.color = hex(e.color); }   // texte libre (ou repris de la fiche par AppMod)
+      out.push(o);
+    });
+    return out.length ? out : null;
+  }
+  var BTNPOS = ["auto", "header-left", "header-right", "top-left", "top-right", "bottom-left", "bottom-right"];
+  var TOPPLACE = ["below", "head-left", "head-center", "head-right"];
+  function clean(m){
+    if(!m || typeof m !== "object" || Array.isArray(m)) return null;
+    var o = {size: +m.size >= 14 && +m.size <= 40 ? +m.size : 20, color: hex(m.color), active: hex(m.active), bg: hex(m.bg)}, any = false;
+    KINDS.forEach(function(k){
+      var x = m[k] && typeof m[k] === "object" ? m[k] : {};
+      var show = ["all", "pc", "mobile"].indexOf(x.show) >= 0 ? x.show : "all", old = x.on !== true ? "off" : x.text === false ? "icon" : "both";
+      o[k] = {pc: MODES.indexOf(x.pc) >= 0 ? x.pc : show === "mobile" ? "off" : old, mobile: MODES.indexOf(x.mobile) >= 0 ? x.mobile : show === "pc" ? "off" : old, items: []};
+      (Array.isArray(x.items) ? x.items : []).slice(0, 12).forEach(function(it){
+        if(!it || typeof it !== "object") return;
+        var b = {t: it.t === "link" ? "link" : "btn", label: String(it.label || "").replace(/[<>]/g, "").slice(0, 30), icon: ICONS[it.icon] ? it.icon : "", color: hex(it.color)};
+        if(okGlyph(it.glyph)) b.glyph = {family: it.glyph.family, code: it.glyph.code, font: it.glyph.font};
+        if(b.t === "link"){ if(!okUrl(it.url)) return; b.url = String(it.url); b.tab = it.tab !== false; }
+        else { if(!/^[a-z0-9_-]{1,30}$/i.test(it.id || "")) return; b.id = it.id; }
+        o[k].items.push(b);
+      });
+      if(k === "side"){ o[k].btn = BTNPOS.indexOf(x.btn) >= 0 ? x.btn : "auto"; o[k].from = x.from === "right" ? "right" : "left"; }
+      if(k === "top") o[k].place = TOPPLACE.indexOf(x.place) >= 0 ? x.place : "below";
+      if(o[k].pc !== "off" || o[k].mobile !== "off") any = true;
+    });
+    return any ? o : null;
+  }
+  var actionOf = function(id){ return (opt.actions || []).filter(function(a){ return a.id === id; })[0] || null; };
+  function isActive(a){
+    try{
+      if(typeof a.active === "function") return !!a.active();
+      var pg = el(a.page), host = pageHost();
+      if(host) return !!pg && pg === host;                       // une page est ouverte : seul son bouton est actif
+      if(a.home) return true;                                     // écran principal
+      var n = el(a.el); if(!n) return false;
+      return n.getAttribute("aria-current") === "page" || n.getAttribute("aria-current") === "true" || n.getAttribute("aria-pressed") === "true" || n.getAttribute("aria-selected") === "true" || n.classList.contains("on") || n.classList.contains("active") || n.classList.contains("sel");
+    }catch(e){ return false; }
+  }
+  // Icône de la collection de l'appli : masque CSS pour un SVG (prend la couleur du bouton), image sinon
+  function assetHtml(x, style){
+    var u = String(x.url).replace(/["'()\\\s]/g, function(c){ return "%" + c.charCodeAt(0).toString(16).toUpperCase(); });
+    return x.svg ? '<span class="mpm-ai" aria-hidden="true" style="--u:url(\'' + u + '\')' + (style || "") + '"></span>' : '<img class="mpm-ai" alt="" src="' + esc(x.url) + '"' + (style ? ' style="' + style.replace(/^;/, "") + '"' : "") + ">";
+  }
+  function iconFor(it, a){
+    if(it.glyph && okGlyph(it.glyph)) return glyphHtml(it.glyph);
+    if(it.icon && ICONS[it.icon]) return svg(ICONS[it.icon]);
+    if(a && !a.live && ASSETS["btn-" + a.id]) return assetHtml(ASSETS["btn-" + a.id]);
+    if(a && a.glyph && okGlyph(a.glyph)) return glyphHtml(a.glyph);
+    if(a && a.icon && ICONS[a.icon]) return svg(ICONS[a.icon]);
+    if(a && a.el){ var n = el(a.el), s = n && n.querySelector("svg"); if(s) return s.outerHTML; }
+    return svg(it.t === "link" ? ICONS.link : ICONS.star);
+  }
+  // Contenu d'un menu : ses éléments, ou les boutons de l'appli par défaut
+  function itemsOf(k){
+    var list = cfg[k].items.length ? cfg[k].items : (opt.actions || []).filter(function(a){ return !a.hidden; }).map(function(a){ return {t: "btn", id: a.id, label: "", icon: "", color: ""}; });
+    return list.filter(function(it){ return it.t === "link" || actionOf(it.id); });
+  }
+  var modeOf = function(k){ return isPc() ? cfg[k].pc : cfg[k].mobile; };
+  var visible = function(k){ return modeOf(k) !== "off"; };
+  // Page de l'appli ouverte en plein écran (<dialog> modal, au-dessus de tout) : les menus s'y installent pour rester visibles
+  var opened = [];
+  function isPage(d){
+    try{
+      if(!d || !d.open || d.classList.contains("dock")) return false;
+      var modal = false; try{ modal = d.matches(":modal"); }catch(e){}
+      if(!modal && getComputedStyle(d).position !== "fixed") return false;
+      var r = d.getBoundingClientRect();
+      return r.height >= innerHeight * 0.7 && r.width >= Math.min(innerWidth * 0.6, 360);
+    }catch(e){ return false; }
+  }
+  function pageHost(){
+    var open = [].filter.call(document.querySelectorAll("dialog[open]"), isPage);
+    opened = opened.filter(function(d){ return open.indexOf(d) >= 0; });
+    open.forEach(function(d){ if(opened.indexOf(d) < 0) opened.push(d); });
+    return opened.length ? opened[opened.length - 1] : null;
+  }
+  function closePages(keep){
+    [].slice.call(document.querySelectorAll("dialog[open]")).filter(isPage).reverse().forEach(function(d){
+      if(d === keep) return;
+      try{ if(typeof opt.closePage === "function") opt.closePage(d); else d.close(); }catch(e){ try{ d.close(); }catch(x){ d.removeAttribute("open"); } }
+    });
+  }
+  function close(){ built.forEach(function(b){ if(b.k === "side"){ b.nav.classList.remove("open"); b.scrim.hidden = true; } }); }
+  function button(it, k){
+    var a = it.t === "btn" ? actionOf(it.id) : null, label = it.label || (a ? a.label : "Lien"), n;
+    if(it.t === "link"){
+      n = document.createElement("a"); n.href = it.url;
+      if(it.tab && !/^mailto:/i.test(it.url)){ n.target = "_blank"; n.rel = "noopener"; }
+    } else {
+      n = document.createElement("button"); n.type = "button";
+      n.addEventListener("click", function(){
+        close();
+        // Bouton du menu : quitte la page plein écran ouverte (retour à l'écran principal ou à la page du bouton)
+        var pg = el(a.page), here = pg && pg.open && isPage(pg);
+        closePages(here ? pg : null);
+        if(here){ setTimeout(paintActive, 30); return; }
+        try{ if(typeof a.run === "function") a.run(); else { var t = el(a.el); if(t) t.click(); } }catch(e){}
+        setTimeout(paintActive, 30);
+      });
+      n.mpmAction = a;
+    }
+    n.className = "mpm-b"; n.title = label; n.setAttribute("aria-label", label);
+    if(it.color) n.style.setProperty("--mc", it.color);
+    n.innerHTML = iconFor(it, a) + "<span>" + esc(label) + "</span>"; n.mpmIcon = !!(it.icon && ICONS[it.icon]) || !!it.glyph;
+    if(it.t === "link") n.addEventListener("click", close);
+    return n;
+  }
+  function paintActive(){ built.concat(hdr ? [{nav: hdr.box}] : []).forEach(function(b){ [].forEach.call(b.nav.querySelectorAll(".mpm-b"), function(n){
+    var a = n.mpmAction; if(!a) return; n.classList.toggle("on", isActive(a));
+    // live : l'icône suit celle du bouton d'origine (ex. sauvegarde : disquette / nuage)
+    if(a.live && !n.mpmIcon){ var t = el(a.el), s = t && t.querySelector("svg"), mine = n.querySelector("svg"); if(s && mine && mine.outerHTML !== s.outerHTML) mine.outerHTML = s.outerHTML; }
+  }); }); }
+  // ----- En-tête réglable -----
+  function teardownHeader(){
+    if(!hdr) return;
+    hdr.moved.forEach(function(m){ m.n.classList.remove("mph-sz-s", "mph-sz-m", "mph-sz-l"); m.n.removeAttribute("data-mph"); if(m.hid !== null) m.n.hidden = m.hid;
+      if(m.st === null) m.n.removeAttribute("style"); else m.n.setAttribute("style", m.st);
+      if(m.next && m.next.parentNode === m.parent) m.parent.insertBefore(m.n, m.next); else if(m.parent) m.parent.appendChild(m.n); });
+    hdr.hidden.forEach(function(n){ n.classList.remove("mph-hide"); });
+    hdr.styled.forEach(function(m){ if(m.st === null) m.n.removeAttribute("style"); else m.n.setAttribute("style", m.st); });
+    hdr.box.remove(); hdr = null; document.documentElement.classList.remove("mph-on");
+  }
+  function renderHeader(){
+    teardownHeader();
+    var H = opt && opt.header, row = H && el(H.row);
+    if(!hcfg || !row) return;
+    var R0 = document.documentElement.style, C = cfg || {};
+    R0.setProperty("--mpm-active", C.active || opt.accent || "#f08a24"); R0.setProperty("--mpm-bg", C.bg || opt.bg || "#161c23"); R0.setProperty("--mpm-fg", C.color || opt.fg || "#e8edf2");
+    var P = H.parts || {}, box = document.createElement("div"); box.className = "mph";
+    var Z = {left: document.createElement("div"), center: document.createElement("div"), right: document.createElement("div")};
+    Z.left.className = "mph-z mph-l"; Z.center.className = "mph-z mph-c"; Z.right.className = "mph-z mph-r";
+    box.appendChild(Z.left); box.appendChild(Z.center); box.appendChild(Z.right);
+    // L'en-tête réglé prend la place du premier élément de l'appli présent dans la rangée (les autres boutons restent autour)
+    var anchor = null;
+    Object.keys(P).forEach(function(t){ var n = el(P[t]); if(!n || !row.contains(n) || n === row) return; var a = n; while(a.parentNode !== row) a = a.parentNode;
+      if(!anchor || (anchor.compareDocumentPosition(a) & 2)) anchor = a; });
+    row.insertBefore(box, anchor);
+    hdr = {box: box, moved: [], hidden: [], styled: []};
+    var stack = {}, used = {};
+    var nodeOf = function(e){
+      if(e.type === "text"){ var t = document.createElement("span"); t.className = "mph-txt"; t.setAttribute("data-mph", "text"); t.textContent = e.text; if(e.color) t.style.color = e.color; return t; }
+      if(e.type === "button"){ var a = actionOf(e.id); if(!a) return null; var b = button({t: "btn", id: e.id, label: "", icon: "", color: ""}, "header"); b.classList.add("mph-btn"); return b; }
+      if(used[e.type]) return null;
+      var n = el(P[e.type]); if(!n) return null; used[e.type] = 1;
+      hdr.moved.push({n: n, parent: n.parentNode, next: n.nextSibling, hid: e.type === "version" || e.type === "subtitle" ? n.hidden : null, st: n.getAttribute("style")});
+      if(e.type === "version" || e.type === "subtitle") n.hidden = false;
+      n.setAttribute("data-mph", e.type); return n;
+    };
+    hcfg.forEach(function(e){
+      var n = nodeOf(e); if(!n) return;
+      if(typeof e.size === "number") hpx(n, e.type, e.size); else n.classList.add("mph-sz-" + e.size);
+      if((e.pos === "above" || e.pos === "below") && stack[e.ref]){
+        var s = stack[e.ref]; if(e.pos === "above") s.insertBefore(n, s.firstChild); else s.appendChild(n); stack[e.k] = s; return;
+      }
+      var s2 = document.createElement("div"); s2.className = "mph-s"; s2.appendChild(n);
+      (Z[e.pos] || Z.left).appendChild(s2); stack[e.k] = s2;
+    });
+    // Éléments de l'appli absents de l'en-tête réglé : masqués
+    Object.keys(P).forEach(function(t){ if(used[t]) return; var n = el(P[t]); if(n && !box.contains(n)){ n.classList.add("mph-hide"); hdr.hidden.push(n); } });
+    (H.hide || []).forEach(function(sel){ [].forEach.call(document.querySelectorAll(sel), function(n){ if(!box.contains(n)){ n.classList.add("mph-hide"); hdr.hidden.push(n); } }); });
+    // Bouton indispensable (ex. Réglages) absent des menus visibles et de l'en-tête : ajouté à droite
+    // (seulement si son bouton d'origine n'est plus visible)
+    var gone = function(a){ var t = el(a.el); return !t || !!t.closest(".mph-hide,.mpm-native-off"); };
+    (opt.actions || []).forEach(function(a){
+      if(!a.keep || !gone(a) || menuIds.indexOf(a.id) >= 0 || hcfg.some(function(e){ return e.type === "button" && e.id === a.id; })) return;
+      var b = button({t: "btn", id: a.id, label: "", icon: "", color: ""}, "header"); b.classList.add("mph-btn", "mph-sz-m");
+      var s3 = document.createElement("div"); s3.className = "mph-s"; s3.appendChild(b); Z.right.appendChild(s3);
+    });
+    document.documentElement.classList.add("mph-on");
+  }
+  function teardown(){
+    built.forEach(function(b){ b.nav.remove(); if(b.scrim) b.scrim.remove(); if(b.burger) b.burger.remove(); });
+    built = []; document.documentElement.classList.remove("mpm-on"); document.body.classList.remove("mpm-has-bottom"); document.body.style.paddingBottom = document.body.dataset.mpmPb || "";
+    [].forEach.call(document.querySelectorAll(".mpm-pg,.mpm-pgt"), function(d){ d.classList.remove("mpm-pg"); d.classList.remove("mpm-pgt"); d.style.removeProperty("--mpm-th"); });
+    (opt && opt.native || []).forEach(function(s){ [].forEach.call(document.querySelectorAll(s), function(n){ n.classList.remove("mpm-native-off"); }); });
+    if(timer){ clearInterval(timer); timer = null; }
+  }
+  // Rangée de l'en-tête de l'appli (en-tête réglable, sinon rangée du bouton ☰)
+  function headRow(){ return el(opt && opt.header && opt.header.row) || el(opt && opt.burgerIn); }
+  // Top menu dans l'en-tête : juste après l'en-tête réglé, sinon après l'icône / le titre de l'appli
+  function placeTop(){
+    var b = built.filter(function(x){ return x.k === "top" && x.head; })[0], row = headRow(); if(!b || !row) return;
+    var ref = hdr && hdr.box && hdr.box.parentNode === row ? hdr.box : null, P = (opt.header && opt.header.parts) || {};
+    if(!ref) Object.keys(P).forEach(function(t){ var n = el(P[t]); if(!n || !row.contains(n) || n === row) return; var a = n; while(a.parentNode !== row) a = a.parentNode;
+      if(!ref || (ref.compareDocumentPosition(a) & 4)) ref = a; });
+    if(ref) row.insertBefore(b.nav, ref.nextSibling);
+  }
+  function render(){ renderMenus(); renderHeader(); placeTop(); paintActive(); if(hdr && !timer) timer = setInterval(paintActive, 1200); }
+  function renderMenus(){
+    teardown(); menuIds = [];
+    if(!cfg) return;
+    var shown = KINDS.filter(visible), host = pageHost(); hostNow = host;
+    if(!shown.length) return;                                   // aucun menu visible sur cet écran : menu d'origine
+    var R = document.documentElement.style;
+    var root = document.documentElement;
+    root.style.setProperty("--mpm-active", cfg.active || opt.accent || "#f08a24");
+    root.style.setProperty("--mpm-bg", cfg.bg || opt.bg || "#161c23");
+    root.style.setProperty("--mpm-fg", cfg.color || opt.fg || "#e8edf2");
+    var lists = {}; shown.forEach(function(k){ lists[k] = itemsOf(k).slice(); });
+    var hasKeepInHeader = function(id){ return (hcfg || []).some(function(e){ return e.type === "button" && e.id === id; }); };
+    // Boutons indispensables (ex. Réglages) : toujours dans un menu visible
+    (opt.actions || []).forEach(function(a){
+      if(!a.keep) return;
+      var there = shown.some(function(k){ return lists[k].some(function(it){ return it.t === "btn" && it.id === a.id; }); });
+      if(!there && !hasKeepInHeader(a.id)) lists[shown[0]].push({t: "btn", id: a.id, label: "", icon: "", color: ""});
+    });
+    shown.forEach(function(k){
+      var md = modeOf(k), nav = document.createElement("nav"); nav.className = "mpm mpm-" + k + (md === "icon" ? " notext" : md === "text" ? " noicon" : "");
+      nav.setAttribute("aria-label", NAMES[k]);
+      nav.style.setProperty("--mpm-s", cfg.size + "px");
+      var b = {k: k, nav: nav};
+      if(k === "side"){
+        if(cfg.side.from === "right") nav.classList.add("right");
+        var x = document.createElement("button"); x.type = "button"; x.className = "mpm-b mpm-x"; x.setAttribute("aria-label", "Fermer le menu");
+        x.innerHTML = svg('<path d="M6 6l12 12M18 6 6 18"/>'); x.onclick = close; nav.appendChild(x);
+        b.scrim = document.createElement("div"); b.scrim.className = "mpm-scrim"; b.scrim.hidden = true; b.scrim.onclick = close; (host || document.body).appendChild(b.scrim);
+        b.burger = document.createElement("button"); b.burger.type = "button"; b.burger.className = "mpm-burger"; b.burger.setAttribute("aria-label", "Ouvrir le menu"); b.burger.innerHTML = svg(ICONS.menu);
+        b.burger.onclick = function(){ nav.classList.add("open"); b.scrim.hidden = false; var f = nav.querySelector(".mpm-b:not(.mpm-x)"); if(f) f.focus(); };
+      }
+      lists[k].forEach(function(it){ nav.appendChild(button(it, k)); });
+      if(k === "top" && host){ nav.classList.add("inpage"); host.insertBefore(nav, host.firstChild); host.classList.add("mpm-pgt"); }   // en haut de l'écran, au-dessus de la page ouverte
+      else if(k === "top" && cfg.top.place !== "below" && headRow()){   // Top menu dans l'en-tête (placé après l'icône / le titre, voir placeTop)
+        nav.classList.add("hd", {"head-left": "hl", "head-center": "hc", "head-right": "hr"}[cfg.top.place]); b.head = true; headRow().appendChild(nav);
+      }
+      else if(k === "top"){
+        var inside = el(opt.topIn), after = el(opt.topAfter);
+        if(inside){ nav.classList.add("in"); inside.appendChild(nav); }                     // dans l'entête de l'appli (qui reste collée en haut)
+        else if(after && after.parentNode) after.parentNode.insertBefore(nav, after.nextSibling);
+        else document.body.insertBefore(nav, document.body.firstChild);
+      }
+      else (host || document.body).appendChild(nav);
+      built.push(b);
+    });
+    // Bouton ☰ du menu latéral : dans le menu du haut s'il est affiché, sinon flottant
+    built.forEach(function(b){
+      if(!b.burger) return;
+      var top = built.filter(function(x){ return x.k === "top"; })[0];
+      var pos = cfg.side.btn || "auto", row = !host && /^header-/.test(pos) ? el(opt.burgerIn) : null;
+      if(row){ b.burger.classList.add("inhead"); b.burger.style.order = pos === "header-left" ? "-1" : "99"; if(pos === "header-left") row.insertBefore(b.burger, row.firstChild); else row.appendChild(b.burger); return; }
+      if(pos === "auto" && top){ top.nav.insertBefore(b.burger, top.nav.firstChild); return; }
+      var p = {"top-left": "p-tl", "top-right": "p-tr", "bottom-right": "p-br", "header-left": "p-tl", "header-right": "p-tr"}[pos] || "p-bl";
+      b.burger.classList.add("float", p); (host || document.body).appendChild(b.burger);
+    });
+    if(built.some(function(b){ return b.k === "bottom"; })){
+      if(document.body.dataset.mpmPb === undefined) document.body.dataset.mpmPb = document.body.style.paddingBottom || "";
+      document.body.classList.add("mpm-has-bottom"); document.body.style.paddingBottom = "calc(64px + env(safe-area-inset-bottom))";
+      if(host) host.classList.add("mpm-pg");
+    }
+    (opt.native || []).forEach(function(s){ [].forEach.call(document.querySelectorAll(s), function(n){ n.classList.add("mpm-native-off"); }); });
+    document.documentElement.classList.add("mpm-on");   // l'appli peut masquer en CSS ses menus d'origine recréés à chaque affichage : html.mpm-on .x{display:none}
+    built.forEach(function(b){ if(b.k === "top" && host) host.style.setProperty("--mpm-th", Math.ceil(b.nav.getBoundingClientRect().height) + "px"); });
+    paintActive(); timer = setInterval(paintActive, 1200);
+    shown.forEach(function(k){ lists[k].forEach(function(it){ if(it.t === "btn") menuIds.push(it.id); }); });
+    if(typeof opt.onApply === "function") try{ opt.onApply(shown); }catch(e){}
+  }
+  // Collection d'assets de l'appli (son dépôt, sur son site) : icônes des boutons
+  // Collection : "btn-<action>" = icône d'un bouton de menu ; tout élément avec "el" (sélecteur CSS) remplace
+  // l'image (<img>) ou l'icône (svg dans un bouton) des éléments de la page qu'il désigne.
+  var BINDS = [], BOUND = [];
+  var okFile = function(f){ return /^(?!.*\.\.)[a-z0-9_][a-z0-9_./-]*\.(svg|png|jpe?g|webp|gif|avif|ico)$/i.test(f || ""); };
+  var okSel = function(x){ return typeof x === "string" && x.length > 0 && x.length <= 300 && !/[<>{};]/.test(x); };
+  function setAssets(d, base){
+    var m = {}, B = [];
+    (d && Array.isArray(d.items) ? d.items : []).forEach(function(it){
+      if(!it || !okFile(it.file)) return;
+      // type « icon » : teinté à la couleur du bouton (forme seule) ; type « image » : affiché tel quel, en couleurs
+      var x = {url: base + it.file, svg: it.type === "icon" || (!it.type && /\.svg$/i.test(it.file))};
+      if(/^btn-[a-z0-9_-]{1,30}$/i.test(it.id || "")) m[it.id] = x;
+      // fichier hors de assets/ = fichier d'origine de l'appli, déjà affiché : rien à remplacer
+      if(okSel(it.el) && /^assets\//.test(it.file)) B.push({el: it.el, x: x});
+    });
+    ASSETS = m; BINDS = B; applyNative(); applyBinds(); if(cfg || hcfg) render();
+  }
+  // Remplace l'icône (svg, .ico, i) d'un élément ; garde l'original pour le remettre si l'élément sort de la collection
+  function swapIcon(n, x){
+    var cur = n.querySelector(".mpm-ai") || n.querySelector("svg") || n.querySelector(".ico") || n.querySelector("i");
+    if(!x){ if(cur && cur.mpmOrig){ cur.insertAdjacentHTML("afterend", cur.mpmOrig); cur.remove(); } return; }
+    if(!cur) return;
+    var orig = cur.mpmOrig || cur.outerHTML, r = cur.getBoundingClientRect(), cs = getComputedStyle(cur);
+    var w = Math.round(r.width) || parseFloat(cs.width) || parseFloat(cur.getAttribute("width")) || 0, h = Math.round(r.height) || parseFloat(cs.height) || parseFloat(cur.getAttribute("height")) || 0;
+    if(cur.classList.contains("mpm-ai")){ w = parseFloat(cur.style.width) || w; h = parseFloat(cur.style.height) || h; }
+    var size = w && h ? ";width:" + w + "px;height:" + h + "px" : ";width:1.25em;height:1.25em";
+    var t = document.createElement("span"); t.innerHTML = assetHtml(x, size); var neu = t.firstChild;
+    if(cur.classList.contains("mpm-ai") && cur.outerHTML === neu.outerHTML) return;
+    neu.mpmOrig = orig; cur.replaceWith(neu);
+  }
+  function applyNative(){
+    (opt && opt.actions || []).forEach(function(a){
+      if(a.live || !a.el) return;
+      var n = el(a.el); if(n) swapIcon(n, ASSETS["btn-" + a.id] || null);
+    });
+  }
+  function setImg(n, url){
+    if(n.mpmSrc === url) return;
+    if(n.mpmOrigSrc === undefined) n.mpmOrigSrc = n.getAttribute("src") || "";
+    n.mpmSrc = url; n.mpmOk = false;
+    var im = new Image(); im.onload = function(){ if(n.mpmSrc === url){ n.mpmOk = true; n.src = url; } }; im.src = url;
+  }
+  function applyBinds(){
+    var now = [];
+    BINDS.forEach(function(b){
+      var list; try{ list = document.querySelectorAll(b.el); }catch(e){ return; }
+      [].forEach.call(list, function(n){
+        now.push(n);
+        if(n.tagName === "IMG") setImg(n, new URL(b.x.url, location.href).href); else swapIcon(n, b.x);
+      });
+    });
+    // éléments retirés de la collection : image ou icône d'origine
+    BOUND.forEach(function(n){ if(now.indexOf(n) >= 0) return;
+      if(n.tagName === "IMG"){ if(n.mpmOrigSrc !== undefined){ n.mpmSrc = null; if(n.mpmOrigSrc) n.src = n.mpmOrigSrc; } } else swapIcon(n, null); });
+    BOUND = now;
+  }
+  function loadAssets(){
+    if(!opt || typeof opt.assets !== "string") return;
+    var base = opt.assets, key = "mpm-assets:" + base;
+    try{ var c = JSON.parse(localStorage.getItem(key) || "null"); if(c) setAssets(c, base); }catch(e){}
+    if(!window.fetch) return;
+    fetch(base + "assets/assets.json", {cache: "no-cache"}).then(function(r){ if(!r.ok) throw 0; return r.json(); }).then(function(d){
+      if(!d || !Array.isArray(d.items)) return;
+      try{ localStorage.setItem(key, JSON.stringify({items: d.items.filter(function(i){ return i && (/^btn-/.test(i.id || "") || i.el); })})); }catch(e){}
+      setAssets(d, base);
+    }).catch(function(){});
+  }
+  document.addEventListener("keydown", function(e){ if(e.key === "Escape") close(); });
+  var hostNow = null, mo = null;
+  function watchPages(){
+    if(mo || !window.MutationObserver) return;
+    var t = null, t2 = null;
+    mo = new MutationObserver(function(list){
+      var pages = false, added = false;
+      list.forEach(function(r){
+        if(r.type === "childList"){ if(BINDS.length && [].some.call(r.addedNodes, function(n){ return n.nodeType === 1 && !(n.classList && (n.classList.contains("mpm-ai") || n.classList.contains("mpm"))); })) added = true; }
+        else if(r.attributeName === "src"){ var n = r.target; if(n.mpmSrc && n.mpmOk && n.src !== n.mpmSrc) n.src = n.mpmSrc; }   // l'appli a remis son image : celle de la collection reste
+        else pages = true;
+      });
+      if(added && !pages){ clearTimeout(t2); t2 = setTimeout(applyBinds, 120); }   // éléments ajoutés par l'appli (listes, fenêtres)
+      if(pages){ clearTimeout(t); t = setTimeout(function(){ applyBinds(); if(cfg && pageHost() !== hostNow) render(); else if(cfg) paintActive(); }, 0); }
+    });
+    mo.observe(document.documentElement, {subtree: true, childList: true, attributes: true, attributeFilter: ["open", "src"]});
+  }
+  if(mq){ var f = function(){ if(cfg) render(); }; if(mq.addEventListener) mq.addEventListener("change", f); else if(mq.addListener) mq.addListener(f); }
+  window.ModProdMenu = {
+    ICONS: ICONS, clean: clean,
+    header: function(h){ if(!opt) return; var n = cleanHeader(h); if(JSON.stringify(n) === JSON.stringify(hcfg)) return; hcfg = n; render(); },
+    init: function(o){ opt = o || {}; css(); cfg = clean(opt.config); hcfg = cleanHeader(opt.headerConfig); var go = function(){ render(); loadAssets(); watchPages(); }; if(document.body) go(); else document.addEventListener("DOMContentLoaded", go); return this; },
+    apply: function(m){ if(!opt) return; var n = clean(m); if(JSON.stringify(n) === JSON.stringify(cfg)) return; cfg = n; render(); },
+    refresh: paintActive,
+    active: function(){ return built.map(function(b){ return b.k; }); }
+  };
+})();
+</script>
+<!-- MODPROD-MENU : fin -->
+<!-- MODPROD-TRAVAUX : début (copie de modprod-app-template/modprod-travaux.js, ne pas modifier ici) -->
+<script>
+/* MODPROD-TRAVAUX v1 — page « Site en construction » / « Site en maintenance » des applis ModProd
+   (copie identique dans chaque appli ; original : modprod-app-template/modprod-travaux.js)
+   Réglée dans AppMod → appli → « Construction / maintenance », publiée dans config-site.json → travaux :
+   {
+     "mode": "off" | "construction" | "maintenance",
+     "gauche": "", "droite": "", "bas": ""          ← zones de texte (vides = masquées ; « bas » vide = texte par défaut)
+   }
+   Ancien réglage encore lu : "construction": true (+ "constructionMsg") = mode construction.
+   Utilisation :
+     ModProdTravaux.init({id: "monappli", name: "Mon appli", icon: "icons/icon-192.png?v=2026-11-05.1",
+                          site: "https://monappli.modprod.app/",   // où lire config-site.json (sinon la page courante)
+                          fetch: true});                            // false = l'appli appelle elle-même ModProdTravaux.apply(config)
+   Jamais bloquant : sans réseau, dernier état connu (cache) ; sans réglage, rien n'est affiché.
+   ?apercu dans l'adresse : voir l'appli quand même (mémorisé jusqu'à la fermeture de l'onglet). */
+(function(){
+  "use strict";
+  if(window.ModProdTravaux) return;
+  var IMG = "https://modprod.app/travaux/";   // images communes (fond + engrenage), dépôt modprod-site
+  var MODES = {
+    construction: {tag: "Site en construction", gear: ["Under", "construction"], def: function(n){ return n + " se prépare. Revenez nous voir très bientôt !"; }},
+    maintenance:  {tag: "Site en maintenance",  gear: ["Under", "maintenance"],  def: function(n){ return n + " est en maintenance. Nous revenons très vite."; }}
+  };
+  var opt = {}, KEY = "", preview = false, box = null, cur = null;
+  var root = document.documentElement;
+
+  function store(k, v){ try{ if(v === undefined) return JSON.parse(localStorage.getItem(KEY + k)); localStorage.setItem(KEY + k, JSON.stringify(v)); }catch(e){ return null; } }
+  function str(v, max){ return typeof v === "string" ? v.slice(0, max || 600) : ""; }
+
+  // Config → état {mode, gauche, droite, bas} (null = rien à afficher)
+  function read(c){
+    if(!c || typeof c !== "object") return null;
+    var t = c.travaux, s;
+    if(t && typeof t === "object") s = {mode: t.mode, gauche: str(t.gauche), droite: str(t.droite), bas: str(t.bas)};
+    else if(typeof t === "string") s = {mode: t, gauche: "", droite: "", bas: ""};
+    else if(c.construction === true) s = {mode: "construction", gauche: "", droite: "", bas: str(c.constructionMsg)};
+    else s = {mode: "off", gauche: "", droite: "", bas: ""};
+    if(!MODES[s.mode]) s.mode = "off";
+    return s;
+  }
+
+  function css(){
+    if(document.getElementById("mpt-css")) return;
+    if(!document.querySelector('link[href*="Chakra+Petch"]')){
+      var f = document.createElement("link"); f.rel = "stylesheet";
+      f.href = "https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@700&display=swap";
+      (document.head || root).appendChild(f);
+    }
+    var st = document.createElement("style"); st.id = "mpt-css";
+    st.textContent =
+      "html.mpt-on,html.mpt-on body{overflow:hidden!important}" +
+      "html.mpt-on body>*:not(#mp-travaux):not(script):not(style){visibility:hidden!important}" +
+      "#mp-travaux{position:fixed;inset:0;z-index:2147483000;overflow:auto;display:flex;flex-direction:column;gap:18px;" +
+        "padding:calc(14px + env(safe-area-inset-top)) 16px calc(18px + env(safe-area-inset-bottom));color:#f4f4f0;" +
+        "font:15px/1.55 'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif;" +
+        "background:linear-gradient(rgba(0,0,0,.30),rgba(0,0,0,.45)),url(" + IMG + "fond.webp) center/cover no-repeat," +
+        "repeating-linear-gradient(-45deg,#1a1a1a 0 26px,#222 26px 52px) #151515}" +
+      "#mp-travaux *{box-sizing:border-box}" +
+      ".mpt-top{display:flex;align-items:center;gap:12px;align-self:flex-start;max-width:100%;padding:8px 18px 8px 8px;border-radius:14px;" +
+        "background:rgba(8,8,8,.78);border:1px solid rgba(255,204,0,.55);box-shadow:0 8px 30px rgba(0,0,0,.55);backdrop-filter:blur(6px)}" +
+      ".mpt-top img{width:46px;height:46px;border-radius:11px;object-fit:contain;flex:none;background:#111}" +
+      ".mpt-top span{font:700 clamp(15px,3.6vw,22px)/1.1 'Chakra Petch','Arial Black',Impact,sans-serif;text-transform:uppercase;letter-spacing:.08em;color:#ffcc00;" +
+        "text-shadow:0 0 14px rgba(255,204,0,.35)}" +
+      ".mpt-mid{flex:1;display:grid;grid-template-columns:1fr;justify-items:center;align-items:center;gap:18px}" +
+      ".mpt-gear{position:relative;container-type:inline-size;width:min(78vw,46vh,440px);aspect-ratio:1;display:grid;place-items:center;filter:drop-shadow(0 18px 40px rgba(0,0,0,.7))}" +
+      ".mpt-gear img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}" +
+      ".mpt-gear::before{content:'';position:absolute;inset:6%;border-radius:50%;background:radial-gradient(circle,#2a2a2a,#0a0a0a 70%);z-index:-1}" +
+      ".mpt-gtxt{position:relative;width:66%;text-align:center;font:800 7.2cqw/1.05 'Chakra Petch','Arial Black',Impact,sans-serif;white-space:nowrap;" +
+        "text-transform:uppercase;letter-spacing:.02em;color:#ffcc00;text-shadow:0 0 18px rgba(255,204,0,.45),0 2px 0 #7a5a00}" +
+      ".mpt-gtxt small{display:block;font-size:.56em;letter-spacing:.22em;color:#f4f4f0;text-shadow:0 0 10px rgba(0,0,0,.8)}" +
+      ".mpt-txt{width:100%;max-width:520px;padding:14px 18px;border-radius:14px;white-space:pre-line;overflow-wrap:anywhere;" +
+        "background:rgba(8,8,8,.80);border:1px solid rgba(255,204,0,.35);border-left:4px solid #ffcc00;box-shadow:0 10px 34px rgba(0,0,0,.55);backdrop-filter:blur(6px)}" +
+      ".mpt-txt[hidden]{display:none!important}" +
+      ".mpt-b{align-self:center;max-width:760px;text-align:center;border-left-width:1px;border-top:4px solid #ffcc00;font-size:16px}" +
+      ".mpt-foot{text-align:center;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.55)}" +
+      ".mpt-foot a{color:inherit}" +
+      "@media (min-width:900px){.mpt-mid{grid-template-columns:1fr auto 1fr;gap:28px}.mpt-mid>*{grid-row:1}.mpt-gear{grid-column:2}.mpt-l{grid-column:1;justify-self:end}.mpt-r{grid-column:3;justify-self:start}" +
+        ".mpt-mid>.mpt-txt{max-width:360px}.mpt-gear{width:min(40vw,58vh,460px)}}" +
+      "@media print{#mp-travaux{display:none}}";
+    (document.head || root).appendChild(st);
+  }
+
+  function el(tag, cls, txt){ var e = document.createElement(tag); if(cls) e.className = cls; if(txt != null) e.textContent = txt; return e; }
+
+  function build(){
+    box = el("div"); box.id = "mp-travaux"; box.setAttribute("role", "alert");
+    var top = el("div", "mpt-top"), ic = el("img"); ic.alt = ""; ic.src = opt.icon || "icons/icon-192.png?v=2026-11-05.1";
+    ic.onerror = function(){ ic.onerror = null; ic.remove(); };
+    top.append(ic, el("span", "mpt-tag"));
+    var mid = el("div", "mpt-mid"), gear = el("div", "mpt-gear"), gi = el("img"); gi.alt = ""; gi.src = IMG + "engrenage.webp";
+    gi.onerror = function(){ gi.onerror = null; gi.remove(); };
+    var gt = el("div", "mpt-gtxt");
+    gear.append(gi, gt);
+    mid.append(gear, el("div", "mpt-txt mpt-l"), el("div", "mpt-txt mpt-r"));
+    var foot = el("p", "mpt-foot"), a = el("a", "", "ModProd"); a.href = "https://modprod.app"; a.target = "_blank"; a.rel = "noopener";
+    foot.append(document.createTextNode("© " + (opt.name || "") + " · "), a);
+    box.append(top, mid, el("div", "mpt-txt mpt-b"), foot);
+    document.body.appendChild(box);
+  }
+
+  function paint(){
+    var on = !!(cur && MODES[cur.mode]) && !preview;
+    root.classList.toggle("mpt-on", on);
+    if(!on){ if(box){ box.remove(); box = null; } return; }
+    if(!document.body){ document.addEventListener("DOMContentLoaded", paint, {once: true}); return; }
+    css();
+    if(!box || !box.isConnected) build();
+    var m = MODES[cur.mode], q = function(s){ return box.querySelector(s); };
+    q(".mpt-tag").textContent = m.tag;
+    var g = q(".mpt-gtxt"); g.textContent = ""; g.append(el("small", "", m.gear[0]), document.createTextNode(m.gear[1]));
+    [["mpt-l", cur.gauche], ["mpt-r", cur.droite], ["mpt-b", cur.bas || m.def(opt.name || "Cette appli")]].forEach(function(z){
+      var n = q("." + z[0]), t = String(z[1] || "").trim(); n.textContent = t; n.hidden = !t;
+    });
+    box.setAttribute("aria-label", m.tag);
+  }
+
+  function apply(c){
+    var s = read(c); if(!s) return;
+    cur = s; store("travaux", s); paint();
+  }
+
+  function load(){
+    var base = opt.site || location.href, url;
+    try{ url = new URL("config-site.json", base).href; }catch(e){ return; }
+    fetch(url, {cache: "no-store"}).then(function(r){ return r.ok ? r.json() : null; }).then(function(c){ if(c) apply(c); }).catch(function(){});
+  }
+
+  window.ModProdTravaux = {
+    init: function(o){
+      opt = o || {}; KEY = "mp:" + (opt.id || location.hostname) + ":";
+      try{
+        if(/[?&]apercu\b/.test(location.search)) sessionStorage.setItem(KEY + "apercu", "1");
+        preview = sessionStorage.getItem(KEY + "apercu") === "1";
+      }catch(e){ preview = /[?&]apercu\b/.test(location.search); }
+      css();
+      cur = store("travaux") || null;          // dernier état connu : affiché tout de suite (pas d'éclair de l'appli)
+      if(cur && !MODES[cur.mode]) cur = null;
+      paint();
+      if(opt.fetch !== false){
+        load();
+        document.addEventListener("visibilitychange", function(){ if(document.visibilityState === "visible") load(); });
+        addEventListener("online", load);
+      }
+      return this;
+    },
+    apply: apply,
+    state: function(){ return cur ? JSON.parse(JSON.stringify(cur)) : null; },
+    preview: function(){ return preview; }
+  };
+})();
+</script>
+<!-- MODPROD-TRAVAUX : fin -->
+<script>ModProdTravaux.init({id: "apk-factory", name: "APK Factory", icon: "icons/icon-192.png?v=2026-11-05.1", site: "https://apk-factory.modprod.app/"});</script>
+</head>
+<body>
+
+<header class="top">
+  <img id="logo" src="icons/icon-192.png?v=2026-11-05.1" alt="">
+  <h1 id="ttl">APK Factory</h1>
+  <span class="badge" id="beta" hidden>BÊTA</span>
+  <span class="hver" id="hver" hidden></span>
+  <button class="icon-btn" id="install" hidden aria-label="Installer l'appli" title="Installer l'appli">⤓</button>
+</header>
+
+<div class="banner" id="announce" hidden><p></p><button class="x" aria-label="Fermer">×</button></div>
+
+<section class="closed" id="closed" hidden>
+  <div>
+    <h2>Appli momentanément fermée</h2>
+    <p id="closedMsg">Revenez un peu plus tard.</p>
+  </div>
+</section>
+
+<main id="app">
+  <!-- ===== Écran « Accueil » : choix du type d'appli ===== -->
+  <section data-page="accueil">
+    <div class="card">
+      <div class="types">
+        <button class="type" type="button" data-open="atv" data-feature="atv"><span class="ti">📺</span>
+          <span><b>Lanceur Android TV</b><small>Une tuile sur l'accueil de la TV qui ouvre un lien ou une appli</small></span></button>
+        <button class="type" type="button" data-open="web" data-source="web" data-feature="siteWeb"><span class="ti">🌐</span>
+          <span><b>Site web</b><small>Un site en appli Android, avec son icône et ses réglages</small></span></button>
+        <button class="type" type="button" data-open="web" data-source="html" data-feature="html"><span class="ti">📄</span>
+          <span><b>Appli HTML</b><small>Ta page .html ou ton .zip, intégrés dans l'APK, hors ligne</small></span></button>
+        <button class="type" type="button" disabled><span class="ti">🎮</span>
+          <span><b>Appli HTML pour TV</b><small>Bientôt</small></span></button>
+      </div>
+    </div>
+    <div class="card" id="historyCard" hidden>
+      <h2>Dernières fabrications</h2>
+      <ul class="jobs" id="history"></ul>
+      <button class="btn ghost wide" type="button" id="historyDrive" hidden disabled>Synchroniser l'historique avec Google Drive</button>
+      <small id="historyDriveStatus" role="status" aria-live="polite" hidden></small>
+    </div>
+  </section>
+
+  <!-- ===== Écran « Lanceur TV » ===== -->
+  <section data-page="atv" hidden>
+    <form class="card" id="atvForm" novalidate>
+      <h2>Lanceur Android TV</h2>
+      <p>Crée une tuile sur l'écran d'accueil de la TV.</p>
+
+      <label class="field"><span>Nom du lanceur</span>
+        <input type="text" name="appName" id="atvName" maxlength="50" required autocomplete="off" placeholder="YouTube"></label>
+
+      <div class="field"><span>Action au lancement</span>
+        <div class="seg" role="radiogroup">
+          <label><input type="radio" name="mode" value="url" checked><span>Ouvrir un lien</span></label>
+          <label><input type="radio" name="mode" value="apk"><span>Ouvrir une appli</span></label>
+          <label><input type="radio" name="mode" value="apkToUrl"><span>Appli, sinon lien</span></label>
+        </div></div>
+
+      <label class="field" id="fUrl"><span>Lien cible</span>
+        <input type="url" name="targetUrl" maxlength="2000" autocomplete="off" inputmode="url" placeholder="https://…">
+        <small>https://… ou intent://…#Intent;scheme=https;end</small></label>
+
+      <label class="field" id="fApk" hidden><span>Package de l'appli cible</span>
+        <input type="text" name="targetApk" list="tvApps" maxlength="150" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="com.google.android.youtube.tv">
+        <small>Visible dans Paramètres → Applis de la TV, ou sur la page Play Store de l'appli (id=…).</small></label>
+      <datalist id="tvApps">
+        <option value="com.google.android.youtube.tv">YouTube (TV)</option>
+        <option value="com.netflix.ninja">Netflix (TV)</option>
+        <option value="com.amazon.amazonvideo.livingroom">Prime Video (TV)</option>
+        <option value="com.disney.disneyplus">Disney+</option>
+        <option value="org.xbmc.kodi">Kodi</option>
+        <option value="org.videolan.vlc">VLC</option>
+        <option value="com.plexapp.android">Plex</option>
+      </datalist>
+
+      <div class="field"><span>Bannière TV <small style="display:inline">(320 × 180)</small></span>
+        <div class="pick">
+          <canvas id="bannerPrev" width="320" height="180" style="width:160px;height:90px"></canvas>
+          <div class="pb">
+            <label class="btn ghost">Choisir une image<input type="file" accept="image/*" id="bannerFile" hidden></label>
+            <button class="btn ghost" type="button" id="bannerClear" hidden>Retirer</button>
+          </div>
+        </div>
+        <small>N'importe quelle image : elle est recadrée en 320 × 180 PNG. Sans bannière, celle de base est gardée.</small></div>
+
+      <div class="field"><span>Icône <small style="display:inline">(carrée)</small></span>
+        <div class="pick">
+          <canvas id="iconPrev" width="512" height="512" style="width:72px;height:72px"></canvas>
+          <div class="pb">
+            <label class="btn ghost">Choisir une image<input type="file" accept="image/*" id="iconFile" hidden></label>
+            <button class="btn ghost" type="button" id="iconClear" hidden>Retirer</button>
+          </div>
+        </div>
+        <small>Recadrée en 512 × 512 PNG. Facultative.</small></div>
+
+      <label class="check"><input type="checkbox" name="isGame" value="true"><span>Ranger dans la rangée « Jeux » de la TV</span></label>
+
+      <details class="more">
+        <summary>Options avancées (package, version)</summary>
+        <label class="field"><span>Nom de package</span>
+          <input type="text" name="packageName" id="atvPkg" maxlength="150" autocomplete="off" autocapitalize="none" spellcheck="false">
+          <small>Rempli à partir du nom. Garde le même pour mettre à jour un lanceur déjà installé.</small></label>
+        <div class="row2">
+          <label class="field"><span>Version</span>
+            <input type="text" name="versionName" value="1.0.0" maxlength="50" autocomplete="off"></label>
+          <label class="field"><span>Code de version</span>
+            <input type="number" name="versionCode" value="1" min="1" step="1" inputmode="numeric">
+            <small>+1 à chaque mise à jour</small></label>
+        </div>
+      </details>
+
+      <ul class="errs" id="atvErrs" hidden></ul>
+      <button class="btn wide" type="submit" id="atvGo">Fabriquer l'APK</button>
+    </form>
+
+  </section>
+
+  <!-- ===== Écran « Site web » ===== -->
+  <section data-page="web" hidden>
+    <form class="card" id="webForm" novalidate>
+      <h2 id="webTitle">Appli Android</h2>
+
+      <div class="field"><span>Contenu de l'appli</span>
+        <div class="seg" role="radiogroup">
+          <label><input type="radio" name="source" value="web" checked><span>🌐 Site web</span></label>
+          <label><input type="radio" name="source" value="html"><span>📄 Fichiers HTML</span></label>
+        </div></div>
+
+      <label class="field"><span>Nom de l'appli</span>
+        <input type="text" name="appName" id="webName" maxlength="50" required autocomplete="off" placeholder="QuantiX 3D"></label>
+
+      <div class="field" id="fHtml" hidden><span>Page .html ou archive .zip</span>
+        <div class="pick">
+          <label class="btn ghost">Choisir le fichier<input type="file" accept=".html,.htm,.zip,text/html,application/zip" id="htmlFile" hidden></label>
+          <span class="fname" id="htmlName">Aucun fichier</span>
+        </div>
+        <small>Un .zip garde tes images, CSS et JS. La page de départ est index.html, sinon le premier .html. 30 Mo maximum.</small></div>
+
+      <div class="field" id="fCfg" hidden><span>Fichier config.js <small style="display:inline">(facultatif)</small></span>
+        <div class="pick">
+          <label class="btn ghost">Choisir<input type="file" accept=".js,text/javascript" id="cfgFile" hidden></label>
+          <span class="fname" id="cfgName">Aucun</span>
+          <button class="btn ghost" type="button" id="cfgClear" hidden>Retirer</button>
+        </div>
+        <small>Configuration window.APP_CONFIG du modèle ModProd.</small></div>
+
+      <label class="field" id="fWeb"><span>Adresse du site</span>
+        <input type="url" name="webUrl" maxlength="2000" autocomplete="off" inputmode="url" placeholder="https://quantix3d.modprod.app/">
+        <small>https:// obligatoire. Les liens du site restent dans l'appli ; mailto:, tel:… ouvrent l'appli Android correspondante.</small></label>
+
+      <div class="field"><span>Icône <small style="display:inline">(carrée)</small></span>
+        <div class="pick">
+          <canvas id="webIconPrev" width="512" height="512" style="width:72px;height:72px"></canvas>
+          <div class="pb">
+            <label class="btn ghost">Choisir une image<input type="file" accept="image/*" id="webIconFile" hidden></label>
+            <button class="btn ghost" type="button" id="webIconClear" hidden>Retirer</button>
+          </div>
+        </div>
+        <small id="iconHint">Sans image, l'icône du site est récupérée automatiquement (manifest, apple-touch-icon…).</small></div>
+
+      <div class="field"><span>Orientation</span>
+        <div class="seg" role="radiogroup">
+          <label><input type="radio" name="orientation" value="portrait" checked><span>Portrait</span></label>
+          <label><input type="radio" name="orientation" value="auto"><span>Suit la rotation</span></label>
+        </div></div>
+
+      <label class="check"><input type="checkbox" name="fullscreen" value="true"><span>Plein écran (masque la barre d'état)</span></label>
+      <label class="check"><input type="checkbox" name="keepScreenOn" value="true"><span>Écran toujours allumé</span></label>
+      <label class="check"><input type="checkbox" name="zoom" value="true"><span>Zoom à deux doigts</span></label>
+
+      <details class="more">
+        <summary>Couleurs</summary>
+        <div class="colors">
+          <label class="check"><input type="checkbox" data-color="barsColor"><span>Barres système</span><input type="color" name="barsColor" value="#141a21" disabled></label>
+          <label class="check"><input type="checkbox" data-color="backgroundColor"><span>Fond au démarrage</span><input type="color" name="backgroundColor" value="#141a21" disabled></label>
+          <label class="check"><input type="checkbox" data-color="accentColor"><span>Accent (fenêtres Android)</span><input type="color" name="accentColor" value="#f08a24" disabled></label>
+        </div>
+        <small class="hint">Non cochée = couleur de base. Barres claires = icônes sombres automatiquement.</small>
+      </details>
+
+      <details class="more">
+        <summary>Autorisations et confidentialité</summary>
+        <label class="check"><input type="checkbox" name="camera" value="true"><span>Caméra (photo depuis un champ fichier, vidéo)</span></label>
+        <label class="check"><input type="checkbox" name="microphone" value="true"><span>Micro</span></label>
+        <label class="check"><input type="checkbox" name="location" value="true"><span>Localisation</span></label>
+        <label class="check"><input type="checkbox" name="blockScreenshots" value="true"><span>Bloquer les captures d'écran</span></label>
+      </details>
+
+      <details class="more">
+        <summary>Options avancées (package, version)</summary>
+        <label class="field"><span>Nom de package</span>
+          <input type="text" name="packageName" id="webPkg" maxlength="150" autocomplete="off" autocapitalize="none" spellcheck="false">
+          <small>Rempli à partir du nom. Garde le même pour mettre à jour une appli déjà installée.</small></label>
+        <div class="row2">
+          <label class="field"><span>Version</span>
+            <input type="text" name="versionName" value="1.0.0" maxlength="50" autocomplete="off"></label>
+          <label class="field"><span>Code de version</span>
+            <input type="number" name="versionCode" value="1" min="1" step="1" inputmode="numeric">
+            <small>+1 à chaque mise à jour</small></label>
+        </div>
+      </details>
+
+      <ul class="errs" id="webErrs" hidden></ul>
+      <button class="btn wide" type="submit" id="webGo">Fabriquer l'APK</button>
+    </form>
+  </section>
+
+  <!-- ===== Écran « Suivi » d'une fabrication ===== -->
+  <section data-page="suivi" hidden>
+    <div class="card" id="jobCard" hidden>
+      <h2 id="jobTitle">Fabrication</h2>
+      <div class="progress" id="jobProgress"><div class="spin"></div><div><b id="jobStep">Envoi…</b><br><small class="mono" id="jobId"></small></div></div>
+      <div class="result" id="jobResult" hidden>
+        <p id="jobInfo"></p>
+        <a class="btn wide" id="jobDl" href="#">Télécharger l'APK</a>
+        <small>Le fichier temporaire et son lien expirent 24 heures après la demande. Sauvegarde-le avant cette échéance.</small>
+        <button class="btn ghost wide" type="button" id="jobDrive">Sauvegarder sur mon Google Drive</button>
+        <small id="jobDriveStatus" role="status" aria-live="polite">Sauvegarde facultative dans ModProd / APK Factory. Ton compte Google sera demandé.</small>
+        <a id="jobDriveLink" href="#" target="_blank" rel="noopener noreferrer" hidden>Ouvrir dans Google Drive</a>
+        <div class="qr" id="jobQr"></div>
+        <small>Scanne le QR code avec le téléphone ou la TV, ou tape le lien dans Downloader :</small>
+        <span class="mono" id="jobLink"></span>
+        <button class="btn ghost" type="button" id="jobCopy">Copier le lien</button>
+      </div>
+      <ul class="errs" id="jobErr" hidden></ul>
+      <p><a id="jobRun" href="#" target="_blank" rel="noopener" hidden>Voir le détail sur GitHub</a></p>
+      <button class="btn ghost wide" type="button" id="jobNew">Fabriquer une autre appli</button>
+    </div>
+  </section>
+
+  <!-- ===== Écran « Applis » : autres applis ModProd (annuaire) ===== -->
+  <section data-page="applis" hidden>
+    <div class="card">
+      <h2>Autres applis ModProd</h2>
+      <ul class="apps" id="apps"><li><small>Chargement…</small></li></ul>
+    </div>
+  </section>
+
+  <p class="foot">APK Factory · <a href="https://modprod.app" target="_blank" rel="noopener">ModProd</a> <span id="ver"></span></p>
+</main>
+
+<nav class="bottom" id="nav">
+  <button data-go="accueil" aria-current="page"><span class="ico">⌂</span>Accueil</button>
+  <button data-go="atv"><span class="ico">📺</span>Lanceur TV</button>
+  <button data-go="web"><span class="ico">🌐</span>Site web</button>
+  <button data-go="applis"><span class="ico">▦</span>Applis</button>
+</nav>
+
+<script>
+/* =====================================================================
+   MODPROD-CORE v1 (intégré) — même logique dans chaque appli ModProd.
+   Règle d'or : la console n'est JAMAIS bloquante. Si config-site.json
+   est inaccessible, l'appli tourne avec le dernier état connu (cache),
+   sinon avec DEFAULTS.
+   ===================================================================== */
+const APP = {
+  id: "apk-factory",
+  name: "APK Factory",
+  site: "https://apk-factory.modprod.app/",   // sert la config quand l'appli tourne en local / APK
+  version: "1.129"
+};
+
+/* Valeurs par défaut = ce que fait l'appli sans aucune config. */
+const DEFAULTS = {
+  access: "open",          // open · full (comptes Guest/Pro) · closed
+  beta: true,
+  installBanner: true,
+  announce: "",
+  tiers: {}                // tiers.<formule>.f.<fonction> = on | lock | hidden ; tiers.<formule>.l.<limite> = nombre
+};
+
+const SUITE_URL = "https://modprod.app/modprod.json";
+
+const MP = (() => {
+  const KEY = "mp:" + APP.id + ":";
+  const store = {
+    get(k){ try{ return JSON.parse(localStorage.getItem(KEY + k)); }catch(e){ return null; } },
+    set(k, v){ try{ localStorage.setItem(KEY + k, JSON.stringify(v)); }catch(e){} }
+  };
+  const isObj = v => v && typeof v === "object" && !Array.isArray(v);
+  // Fusion prudente : un champ inconnu est gardé, un champ dont le type ne correspond pas est ignoré.
+  const merge = (base, over) => {
+    const out = Array.isArray(base) ? base.slice() : Object.assign({}, base);
+    if(!isObj(over)) return out;
+    Object.keys(over).forEach(k => {
+      const b = base ? base[k] : undefined, v = over[k];
+      if(b === undefined || b === null) out[k] = v;
+      else if(isObj(b)) out[k] = isObj(v) ? merge(b, v) : b;
+      else if(typeof b === typeof v) out[k] = v;
+    });
+    return out;
+  };
+  const onModprod = /(^|\.)modprod\.app$/.test(location.hostname);
+  const configUrl = onModprod ? "config-site.json" : APP.site + "config-site.json";
+
+  const fetchJson = async (url, ms) => {
+    const ctl = typeof AbortController === "function" ? new AbortController() : null;
+    const t = setTimeout(() => ctl && ctl.abort(), ms || 6000);
+    try{
+      const r = await fetch(url + (url.indexOf("?") < 0 ? "?" : "&") + "t=" + Date.now(), {cache: "no-store", signal: ctl ? ctl.signal : undefined});
+      if(!r.ok) throw new Error("HTTP " + r.status);
+      return await r.json();
+    } finally { clearTimeout(t); }
+  };
+
+  let config = merge(DEFAULTS, store.get("config"));
+  const listeners = [];
+  const emit = () => listeners.forEach(fn => { try{ fn(config); }catch(e){ console.error(e); } });
+
+  const api = {
+    get config(){ return config; },
+    /* Formule de l'utilisateur. L'appli la remplace quand elle a des comptes. */
+    tier: () => "free",
+    /* État d'une fonction : "on" · "lock" · "hidden" (par défaut "on"). */
+    feature(name){
+      const t = config.tiers && config.tiers[api.tier()];
+      const v = t && t.f ? t.f[name] : undefined;
+      return v === "lock" || v === "hidden" ? v : "on";
+    },
+    /* Limite d'une formule : nombre, ou Infinity si vide / absente. */
+    limit(name){
+      const t = config.tiers && config.tiers[api.tier()];
+      const v = t && t.l ? t.l[name] : undefined;
+      return typeof v === "number" ? v : Infinity;
+    },
+    onChange(fn){ listeners.push(fn); fn(config); },
+    async refresh(){
+      try{
+        const fresh = await fetchJson(configUrl);
+        if(isObj(fresh)){ store.set("config", fresh); config = merge(DEFAULTS, fresh); emit(); }
+      }catch(e){ /* hors ligne ou config absente : on garde le cache / les défauts */ }
+    },
+    /* Annuaire de la suite (format modprod-suite v1), mis en cache aussi. */
+    async suite(){
+      try{
+        const s = await fetchJson(SUITE_URL);
+        if(isObj(s) && Array.isArray(s.apps)){ store.set("suite", s); return s; }
+      }catch(e){}
+      return store.get("suite");
+    }
+  };
+  return api;
+})();
+
+/* ---------- Application de la config à l'écran ---------- */
+const $ = s => document.querySelector(s);
+
+function applyDesign(d){
+  if(!d || typeof d !== "object") return;
+  const r = document.documentElement.style, hex = /^#[0-9a-f]{3,8}$/i;
+  const c = d.couleurs || {};
+  ["fond", "surface", "texte", "accent"].forEach(k => { if(hex.test(c[k] || "")) r.setProperty("--" + k, c[k]); });
+  if(d.fond && d.fond.type === "degrade"){
+    if(hex.test(d.fond.de || "")) r.setProperty("--fond", d.fond.de);
+    if(hex.test(d.fond.vers || "")) r.setProperty("--fond2", d.fond.vers);
+  } else if(c.fond && hex.test(c.fond)) r.setProperty("--fond2", c.fond);
+  if(d.formes && typeof d.formes.arrondi === "number") r.setProperty("--arrondi", Math.max(0, Math.min(30, d.formes.arrondi)) + "px");
+  if(d.police && typeof d.police.taille === "number") r.setProperty("--taille", Math.max(12, Math.min(20, d.police.taille)) + "px");
+  if(hex.test(c.fond || "")) document.querySelector('meta[name="theme-color"]').setAttribute("content", c.fond);
+}
+
+function applyFeatures(){
+  document.querySelectorAll("[data-feature]").forEach(el => {
+    const st = MP.feature(el.dataset.feature);
+    el.hidden = st === "hidden";
+    el.classList.toggle("lock", st === "lock");
+    el.dataset.state = st;
+  });
+}
+
+function applyConfig(c){
+  $("#beta").hidden = !c.beta;
+  // Accès
+  const blocked = c.access === "closed" || (c.access === "full" && MP.tier() === "free");
+  $("#closed").hidden = !blocked;
+  $("#app").hidden = blocked;
+  $("#nav").hidden = blocked;
+  $("#closedMsg").textContent = c.access === "full" ? "Cette appli est réservée aux comptes Guest et Pro pour le moment." : "Revenez un peu plus tard.";
+  // Annonce (masquée tant que le même texte a été fermé)
+  const msg = String(c.announce || "").trim(), box = $("#announce");
+  let closedTxt = null; try{ closedTxt = localStorage.getItem("mp:" + APP.id + ":announce-x"); }catch(e){}
+  box.hidden = !msg || closedTxt === msg;
+  box.querySelector("p").textContent = msg;
+  applyDesign(c.design);
+  applyFeatures();
+  updateInstall();
+}
+
+$("#announce .x").addEventListener("click", () => {
+  try{ localStorage.setItem("mp:" + APP.id + ":announce-x", String(MP.config.announce || "").trim()); }catch(e){}
+  $("#announce").hidden = true;
+});
+
+/* Exemple : clic sur une fonction en cadenas */
+document.addEventListener("click", e => {
+  const el = e.target.closest("[data-feature]");
+  if(!el) return;
+  if(el.dataset.state === "lock"){ e.preventDefault(); e.stopImmediatePropagation(); alert("Cette fonction est désactivée pour la formule actuelle dans AppMod."); return; }
+});
+
+/* ---------- Navigation (menu du bas) ---------- */
+function go(page){
+  document.querySelectorAll("[data-page]").forEach(s => s.hidden = s.dataset.page !== page);
+  document.querySelectorAll("#nav [data-go]").forEach(b => b.toggleAttribute("aria-current", b.dataset.go === page));
+  if(page === "applis") loadApps();
+  if(page === "accueil" && typeof renderHistory === "function") renderHistory();
+  scrollTo(0, 0);
+}
+document.querySelectorAll("#nav [data-go]").forEach(b => b.addEventListener("click", () => go(b.dataset.go)));
+
+/* ---------- Autres applis (annuaire commun) ---------- */
+let appsLoaded = false;
+async function loadApps(){
+  if(appsLoaded) return;
+  const ul = $("#apps"), s = await MP.suite();
+  const list = s && Array.isArray(s.apps) ? s.apps.filter(a => a && a.id !== APP.id && a.status !== "masque") : [];
+  list.sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
+  ul.textContent = "";
+  if(!list.length){ ul.innerHTML = "<li><small>Liste indisponible pour le moment.</small></li>"; return; }
+  list.forEach(a => {
+    const li = document.createElement("li"), link = document.createElement("a");
+    link.href = a.url; link.target = "_blank"; link.rel = "noopener";
+    if(a.status === "bientot") link.className = "soon";
+    const img = document.createElement("img"); img.alt = ""; img.loading = "lazy"; if(a.icon) img.src = a.icon;
+    const txt = document.createElement("span"), b = document.createElement("b"), sm = document.createElement("small");
+    b.textContent = a.name + (a.status === "bientot" ? " (bientôt)" : "");
+    sm.textContent = a.description || "";
+    txt.append(b, sm); link.append(img, txt); li.append(link); ul.append(li);
+  });
+  appsLoaded = true;
+}
+
+/* =====================================================================
+   FABRIQUE — Lanceur Android TV
+   Le formulaire part vers /api/build (fonction Cloudflare), qui lance le
+   workflow GitHub ; /api/status donne l'avancement puis le lien de l'APK.
+   ===================================================================== */
+const JAVA_RESERVED = new Set(("abstract assert boolean break byte case catch char class const continue default do double else enum extends " +
+  "false final finally float for goto if implements import instanceof int interface long native new null package private protected public " +
+  "return short static strictfp super switch synchronized this throw throws transient true try void volatile while var record yield sealed permits").split(" "));
+const HISTORY_KEY = "apkf.jobs";
+
+function slug(s){
+  let x = String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "");
+  if(!x) return "";
+  if(!/^[a-z]/.test(x)) x = "a" + x;
+  if(JAVA_RESERVED.has(x)) x += "_app";
+  return x.slice(0, 40);
+}
+function pkgErrors(pkg){
+  if(!pkg) return ["Nom de package obligatoire."];
+  const parts = pkg.split("."), out = [];
+  if(parts.length < 2) out.push("Nom de package : au moins deux segments (ex. app.modprod.atvlink.youtube).");
+  for(const p of parts){
+    if(!/^[a-z][a-z0-9_]*$/.test(p)) out.push(`Nom de package : « ${p || "(vide)"} » doit être en minuscules et commencer par une lettre.`);
+    else if(JAVA_RESERVED.has(p)) out.push(`Nom de package : « ${p} » est un mot réservé Java.`);
+  }
+  return out;
+}
+
+/* --- Images : recadrées au bon format, en PNG --- */
+const images = {banner: null, icon: null, webIcon: null};
+function drawCover(canvas, img){
+  const c = canvas.getContext("2d"), W = canvas.width, H = canvas.height;
+  const s = Math.max(W / img.width, H / img.height), w = img.width * s, h = img.height * s;
+  c.clearRect(0, 0, W, H);
+  c.imageSmoothingQuality = "high";
+  c.drawImage(img, (W - w) / 2, (H - h) / 2, w, h);
+}
+function clearCanvas(canvas){ canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height); }
+function setupPicker(kind){
+  const input = $("#" + kind + "File"), canvas = $("#" + kind + "Prev"), clear = $("#" + kind + "Clear");
+  input.addEventListener("change", () => {
+    const f = input.files && input.files[0];
+    if(!f) return;
+    const url = URL.createObjectURL(f), img = new Image();
+    img.onload = () => {
+      drawCover(canvas, img); URL.revokeObjectURL(url);
+      canvas.toBlob(b => { images[kind] = b; clear.hidden = false; }, "image/png");
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); alert("Image illisible."); };
+    img.src = url;
+    input.value = "";
+  });
+  clear.addEventListener("click", () => { images[kind] = null; clearCanvas(canvas); clear.hidden = true; });
+}
+setupPicker("banner");
+setupPicker("icon");
+setupPicker("webIcon");
+
+/* --- Formulaires --- */
+const atvForm = $("#atvForm"), atvPkg = $("#atvPkg"), webForm = $("#webForm"), webPkg = $("#webPkg");
+const PKG_PREFIX = {atv: "app.modprod.atvlink.", web: "app.modprod."};
+function autoPackage(nameInput, pkgInput, prefix){
+  let touched = false;
+  nameInput.addEventListener("input", () => { if(!touched){ const s = slug(nameInput.value); pkgInput.value = s ? prefix + s : ""; } });
+  pkgInput.addEventListener("input", () => { touched = pkgInput.value.trim() !== ""; });
+}
+autoPackage($("#atvName"), atvPkg, PKG_PREFIX.atv);
+autoPackage($("#webName"), webPkg, PKG_PREFIX.web);
+function syncMode(){
+  const m = atvForm.mode.value;
+  $("#fUrl").hidden = m === "apk";
+  $("#fApk").hidden = m === "url";
+}
+atvForm.querySelectorAll("input[name=mode]").forEach(r => r.addEventListener("change", syncMode));
+syncMode();
+
+function showErrors(box, list){
+  box.textContent = "";
+  list.forEach(t => { const li = document.createElement("li"); li.textContent = t; box.append(li); });
+  box.hidden = !list.length;
+  if(list.length) box.scrollIntoView({block: "center", behavior: "smooth"});
+}
+
+atvForm.addEventListener("submit", async e => {
+  e.preventDefault();
+  if(MP.feature("atv") !== "on"){ showErrors($("#atvErrs"), ["Générateur Android TV désactivé dans AppMod."]); return; }
+  const f = atvForm, m = f.mode.value, errs = [];
+  const name = f.appName.value.trim(), url = f.targetUrl.value.trim(), apk = f.targetApk.value.trim();
+  if(!atvPkg.value.trim() && name) atvPkg.value = slug(name) ? PKG_PREFIX.atv + slug(name) : "";
+  const pkg = atvPkg.value.trim();
+  if(!name) errs.push("Nom du lanceur obligatoire.");
+  errs.push(...pkgErrors(pkg));
+  if(m !== "apk" && !/^(https:\/\/|intent:\/\/)\S+$/.test(url)) errs.push("Lien cible : il doit commencer par https:// ou intent://.");
+  if(m !== "url" && !/^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z][A-Za-z0-9_]*)+$/.test(apk)) errs.push("Package de l'appli cible invalide (ex. com.google.android.youtube.tv).");
+  if(!/^\d+$/.test(f.versionCode.value) || +f.versionCode.value < 1) errs.push("Code de version : nombre entier à partir de 1.");
+  if(errs.length && errs.some(t => t.startsWith("Nom de package"))) f.querySelector("details.more").open = true;
+  showErrors($("#atvErrs"), errs);
+  if(errs.length) return;
+
+  const fd = new FormData();
+  fd.append("type", "atv");
+  fd.append("appName", name);
+  fd.append("packageName", pkg);
+  fd.append("mode", m);
+  if(m !== "apk") fd.append("targetUrl", url);
+  if(m !== "url") fd.append("targetApk", apk);
+  fd.append("isGame", f.isGame.checked ? "true" : "false");
+  fd.append("versionName", f.versionName.value.trim() || "1.0.0");
+  fd.append("versionCode", f.versionCode.value);
+  if(images.banner) fd.append("banner", images.banner, "banner.png");
+  if(images.icon) fd.append("icon", images.icon, "icon.png");
+
+  send(fd, {type: "atv", name, pkg, errBox: $("#atvErrs"), btn: $("#atvGo")});
+});
+
+/* Site web ou fichiers HTML */
+const MAX_BUNDLE = 30 * 1024 * 1024;
+const files = {html: null, cfg: null};
+function syncSource(){
+  const html = webForm.source.value === "html";
+  $("#fWeb").hidden = html; $("#fHtml").hidden = !html; $("#fCfg").hidden = !html;
+  $("#iconHint").textContent = html ? "Sans image, l'icône de base est gardée. Recadrée en 512 × 512 PNG."
+                                    : "Sans image, l'icône du site est récupérée automatiquement (manifest, apple-touch-icon…).";
+}
+webForm.querySelectorAll("input[name=source]").forEach(r => r.addEventListener("change", syncSource));
+syncSource();
+function fileLabel(f){
+  const n = f.size < 1048576 ? Math.max(1, Math.round(f.size / 1024)) + " Ko" : (f.size / 1048576).toFixed(1).replace(".", ",") + " Mo";
+  return f.name + " · " + n;
+}
+$("#htmlFile").addEventListener("change", e => {
+  const f = e.target.files && e.target.files[0]; e.target.value = "";
+  if(!f) return;
+  if(!/\.(html?|zip)$/i.test(f.name)){ alert("Choisis un fichier .html ou .zip."); return; }
+  if(f.size > MAX_BUNDLE){ alert("Fichier trop gros (30 Mo maximum)."); return; }
+  files.html = f; $("#htmlName").textContent = fileLabel(f);
+});
+$("#cfgFile").addEventListener("change", e => {
+  const f = e.target.files && e.target.files[0]; e.target.value = "";
+  if(!f) return;
+  if(f.size > 1048576){ alert("config.js : 1 Mo maximum."); return; }
+  files.cfg = f; $("#cfgName").textContent = fileLabel(f); $("#cfgClear").hidden = false;
+});
+$("#cfgClear").addEventListener("click", () => { files.cfg = null; $("#cfgName").textContent = "Aucun"; $("#cfgClear").hidden = true; });
+
+webForm.querySelectorAll("[data-color]").forEach(c => c.addEventListener("change", () => {
+  webForm.elements[c.dataset.color].disabled = !c.checked;
+}));
+webForm.addEventListener("submit", e => {
+  e.preventDefault();
+  const f = webForm, errs = [];
+  const name = f.appName.value.trim(), url = f.webUrl.value.trim(), isHtml = f.source.value === "html";
+  if(MP.feature(isHtml ? "html" : "siteWeb") !== "on"){
+    showErrors($("#webErrs"), ["Ce générateur est désactivé dans AppMod."]); return;
+  }
+  if(!webPkg.value.trim() && name) webPkg.value = slug(name) ? PKG_PREFIX.web + slug(name) : "";
+  const pkg = webPkg.value.trim();
+  if(!name) errs.push("Nom de l'appli obligatoire.");
+  if(isHtml){
+    if(!files.html) errs.push("Choisis la page .html ou l'archive .zip de l'appli.");
+  }else{
+    let okUrl = false;
+    try{ const u = new URL(url); okUrl = u.protocol === "https:" && u.hostname.includes("."); }catch(err){}
+    if(!okUrl) errs.push("Adresse du site : https://… attendue (Android bloque le http:// non chiffré).");
+  }
+  errs.push(...pkgErrors(pkg));
+  if(!/^\d+$/.test(f.versionCode.value) || +f.versionCode.value < 1) errs.push("Code de version : nombre entier à partir de 1.");
+  if(errs.some(t => t.startsWith("Nom de package"))) f.querySelector("details.more:last-of-type").open = true;
+  showErrors($("#webErrs"), errs);
+  if(errs.length) return;
+
+  const fd = new FormData();
+  fd.append("type", isHtml ? "html" : "site-web");
+  fd.append("appName", name);
+  fd.append("packageName", pkg);
+  if(isHtml){
+    fd.append("bundle", files.html, files.html.name);
+    if(files.cfg) fd.append("config", files.cfg, "config.js");
+  }else fd.append("webUrl", url);
+  fd.append("orientation", f.orientation.value);
+  ["fullscreen", "keepScreenOn", "zoom", "camera", "microphone", "location", "blockScreenshots"]
+    .forEach(k => fd.append(k, f.elements[k].checked ? "true" : "false"));
+  f.querySelectorAll("[data-color]").forEach(c => { if(c.checked) fd.append(c.dataset.color, f.elements[c.dataset.color].value); });
+  fd.append("versionName", f.versionName.value.trim() || "1.0.0");
+  fd.append("versionCode", f.versionCode.value);
+  if(images.webIcon) fd.append("icon", images.webIcon, "icon.png");
+  send(fd, {type: "web", name, pkg, errBox: $("#webErrs"), btn: $("#webGo")});
+});
+
+async function send(fd, o){
+  o.btn.disabled = true; o.btn.textContent = "Envoi…";
+  try{
+    const r = await fetch("api/build", {method: "POST", body: fd, credentials: "same-origin"});
+    const d = await r.json().catch(() => ({}));
+    if(!r.ok || !d.job){
+      showErrors(o.errBox, d.errors || [d.error || `Erreur ${r.status} : réessaie dans un moment.`]);
+      if(d.job) remember({job: d.job, statusKey: d.statusKey, appName: o.name, form: o.type, status: "failed"});
+      return;
+    }
+    remember({job: d.job, statusKey: d.statusKey, appName: o.name, packageName: o.pkg, form: o.type, status: "queued", createdAt: new Date().toISOString()});
+    openJob(d.job, o.name, o.type, d.statusKey);
+  }catch(err){
+    showErrors(o.errBox, ["Pas de connexion avec le site. Vérifie ta connexion et réessaie."]);
+  }finally{
+    o.btn.disabled = false; o.btn.textContent = "Fabriquer l'APK";
+  }
+}
+
+/* --- Suivi d'une fabrication --- */
+let pollTimer = null, currentJob = null, currentForm = "atv", currentStatusKey = null;
+function openJob(job, name, form, statusKey){
+  driveApk = null;
+  currentStatusKey = statusKey || loadHistory().find(j => j.job === job)?.statusKey || null;
+  currentJob = job; currentForm = form || "atv";
+  go("suivi");
+  const c = $("#jobCard"); c.hidden = false;
+  $("#jobTitle").textContent = name || "Fabrication";
+  $("#jobId").textContent = "Tâche " + job;
+  $("#jobProgress").hidden = false; $("#jobResult").hidden = true; $("#jobErr").hidden = true; $("#jobRun").hidden = true;
+  $("#jobStep").textContent = "Lancement de la fabrication…";
+  clearTimeout(pollTimer);
+  poll(job, Date.now());
+}
+async function poll(job, started){
+  if(job !== currentJob) return;
+  // No requests while the tab is hidden: the signed APK is delivered by
+  // GitHub's callback, independently of this browser.
+  if(document.hidden){
+    pollTimer = setTimeout(() => poll(job, started), 30000);
+    return;
+  }
+  if(Date.now() - started > 30 * 60 * 1000){
+    showJobError(["Suivi interrompu après 30 minutes. Tu peux rouvrir la fabrication depuis l'historique."]);
+    return;
+  }
+  let d = null;
+  try{
+    const r = await fetch("api/status", {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({job, statusKey: currentStatusKey}), credentials: "same-origin"});
+    d = await r.json().catch(() => null);
+    if(r.status === 404){ showJobError(["Tâche introuvable (expirée ?)."]); return; }
+  }catch(e){ /* réseau : on réessaie */ }
+  if(job !== currentJob) return;
+  if(d){
+    if(d.runUrl){ const a = $("#jobRun"); a.href = d.runUrl; a.hidden = false; }
+    remember({job, status: d.status, appName: d.appName, packageName: d.packageName, type: d.type});
+    if(d.status === "done" && d.apk){ showResult(d); return; }
+    if(d.status === "failed"){ showJobError([d.error || "La fabrication a échoué."]); return; }
+    const sec = Math.round((Date.now() - started) / 1000);
+    $("#jobStep").textContent = (d.step || "En attente d'une machine GitHub") + " · " + sec + " s";
+  }
+  pollTimer = setTimeout(() => poll(job, started), 8000);
+}
+function showJobError(list){
+  $("#jobProgress").hidden = true;
+  showErrors($("#jobErr"), list);
+}
+function fmtSize(n){ return n ? (n / 1048576).toFixed(1).replace(".", ",") + " Mo" : ""; }
+let driveApk = null;
+let driveSaving = false;
+let driveModule = null;
+let drivePrepared = false;
+let drivePreparationId = 0;
+
+function enableDriveHistory() {
+  const button = $("#historyDrive");
+  button.hidden = false;
+  button.disabled = false;
+  renderHistory();
+}
+async function prepareDriveHistory() {
+  try {
+    const mod = await import("./drive-backup.js");
+    await mod.prepareGoogleDrive();
+    driveModule = mod;
+    enableDriveHistory();
+  } catch {
+    // Drive is optional; no extra prompt or card when OAuth is not configured.
+  }
+}
+$("#historyDrive").addEventListener("click", async () => {
+  if (!driveModule) return;
+  const button = $("#historyDrive"), status = $("#historyDriveStatus");
+  button.disabled = true;
+  status.hidden = false;
+  status.textContent = "Synchronisation de l'historique avec ton Google Drive…";
+  try {
+    // Opens Google's consent UI directly from this click.
+    const jobs = await driveModule.syncHistoryWithGoogleDrive(loadHistory());
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(jobs.slice(0, 15)));
+    renderHistory();
+    status.textContent = "Historique synchronisé : " + jobs.length + " fabrication(s).";
+  } catch (error) {
+    status.textContent = error?.message || "Synchronisation impossible. Les données locales restent inchangées.";
+  } finally {
+    button.disabled = false;
+  }
+});
+prepareDriveHistory();
+$("#jobDrive").addEventListener("click", async () => {
+  if(!driveApk || driveSaving || !drivePrepared || !driveModule) return;
+  driveSaving = true;
+  const button = $("#jobDrive"), info = $("#jobDriveStatus");
+  button.disabled = true;
+  button.textContent = "Sauvegarde Google Drive…";
+  info.textContent = "Connexion et transfert vers ton Drive en cours. Ne ferme pas cette page.";
+  try {
+    // No await before requesting OAuth: preserve the direct click user gesture.
+    const file = await driveModule.saveApkToGoogleDrive(driveApk);
+    info.textContent = "APK sauvegardé et vérifié sur Google Drive. La copie temporaire reste téléchargeable jusqu'à son expiration.";
+    const link = $("#jobDriveLink");
+    link.href = file.link;
+    link.hidden = false;
+    button.textContent = "Sauvegardé sur Google Drive";
+  } catch(error) {
+    info.textContent = error?.message || "Sauvegarde Google Drive impossible. L'APK reste disponible au téléchargement.";
+    button.textContent = "Réessayer Google Drive";
+    button.disabled = false;
+  } finally { driveSaving = false; }
+});
+function showResult(d){
+  driveApk = d.apk;
+  $("#jobDriveLink").hidden = true;
+  const preparationId = ++drivePreparationId;
+  drivePrepared = false;
+  $("#jobDriveStatus").textContent = "Préparation de Google Drive…";
+  $("#jobDrive").disabled = true;
+  $("#jobDrive").textContent = "Connexion Google Drive…";
+  import("./drive-backup.js").then(async module => {
+    driveModule = module;
+    await module.prepareGoogleDrive();
+    if(preparationId !== drivePreparationId) return;
+    drivePrepared = true;
+    $("#jobDriveStatus").textContent = "Sauvegarde facultative dans ModProd / APK Factory.";
+    $("#jobDrive").disabled = false;
+    $("#jobDrive").textContent = "Sauvegarder sur mon Google Drive";
+  }).catch(err => {
+    if(preparationId !== drivePreparationId) return;
+    $("#jobDriveStatus").textContent = err?.message || "Google Drive non disponible.";
+    $("#jobDrive").textContent = "Google Drive indisponible";
+    $("#jobDrive").disabled = true;
+  });
+  $("#jobProgress").hidden = true;
+  $("#jobResult").hidden = false;
+  $("#jobInfo").textContent = `${d.packageName} · v${d.versionName} (${d.versionCode})` + (d.apk.size ? " · " + fmtSize(d.apk.size) : "");
+  const dl = $("#jobDl"); dl.href = d.apk.url; dl.setAttribute("download", d.apk.name);
+  $("#jobLink").textContent = d.apk.url;
+  const box = $("#jobQr"); box.textContent = "";
+  if(window.qrcode){
+    const q = qrcode(0, "M"); q.addData(d.apk.url); q.make();
+    const img = new Image(); img.alt = "QR code du lien de l'APK"; img.src = q.createDataURL(6, 2); box.append(img);
+  }
+}
+$("#jobCopy").addEventListener("click", async () => {
+  try{ await navigator.clipboard.writeText($("#jobLink").textContent); $("#jobCopy").textContent = "Lien copié"; }
+  catch(e){ prompt("Copie ce lien :", $("#jobLink").textContent); }
+  setTimeout(() => { $("#jobCopy").textContent = "Copier le lien"; }, 2000);
+});
+$("#jobNew").addEventListener("click", () => {
+  currentJob = null; clearTimeout(pollTimer);
+  $("#atvErrs").hidden = true; $("#webErrs").hidden = true;
+  go(currentForm);
+});
+
+/* --- Historique (sur cet appareil) --- */
+function loadHistory(){ try{ return JSON.parse(localStorage.getItem(HISTORY_KEY)) || []; }catch(e){ return []; } }
+function remember(j){
+  const list = loadHistory(), i = list.findIndex(x => x.job === j.job);
+  const clean = Object.fromEntries(Object.entries(j).filter(([, v]) => v !== undefined && v !== null));
+  if(i >= 0) Object.assign(list[i], clean); else list.unshift(clean);
+  try{ localStorage.setItem(HISTORY_KEY, JSON.stringify(list.slice(0, 15))); }catch(e){}
+}
+const STATUS_TXT = {queued: "en attente", running: "en cours", done: "prêt", failed: "échec"};
+function renderHistory(){
+  const list = loadHistory(), ul = $("#history");
+  $("#historyCard").hidden = !list.length && $("#historyDrive").hidden;
+  ul.textContent = "";
+  list.forEach(j => {
+    const li = document.createElement("li"), n = document.createElement("span"), b = document.createElement("b"), s = document.createElement("small");
+    n.className = "jn"; b.textContent = j.appName || j.job; s.textContent = (j.packageName || "") + " · " + j.job;
+    n.append(b, s);
+    const expired = Number.isFinite(Date.parse(j.createdAt || "")) &&
+      Date.now() - Date.parse(j.createdAt) >= 24 * 60 * 60 * 1000;
+    const st = document.createElement("span"); st.className = "st " + (j.status || "");
+    st.textContent = expired ? "expirée" : (STATUS_TXT[j.status] || j.status || "");
+    const open = document.createElement("button"); open.className = "btn ghost"; open.type = "button";
+    open.textContent = expired ? "Expiré" : "Ouvrir";
+    open.disabled = expired;
+    if (expired) open.title = "APK temporaire supprimé après 24 heures. La fiche historique reste sur Google Drive.";
+    open.style.cssText = "min-height:36px;padding:0 10px;font-size:13px";
+    open.addEventListener("click", () => openJob(j.job, j.appName, j.form || (j.type === "atv" ? "atv" : "web"), j.statusKey));
+    li.append(n, st, open); ul.append(li);
+  });
+}
+document.querySelectorAll("[data-open]").forEach(b => b.addEventListener("click", () => {
+  if(b.dataset.feature && MP.feature(b.dataset.feature) !== "on") return;
+  if(b.dataset.source){ webForm.source.value = b.dataset.source; syncSource(); }
+  go(b.dataset.open);
+}));
+
+/* ---------- Installation (PWA) ---------- */
+let installEvt = null;
+function updateInstall(){ $("#install").hidden = !(installEvt && MP.config.installBanner); }
+addEventListener("beforeinstallprompt", e => { e.preventDefault(); installEvt = e; updateInstall(); });
+$("#install").addEventListener("click", async () => {
+  if(!installEvt) return;
+  installEvt.prompt(); try{ await installEvt.userChoice; }catch(e){}
+  installEvt = null; updateInstall();
+});
+
+/* ---------- Démarrage ---------- */
+$("#ver").textContent = "· v" + APP.version;
+renderHistory();
+$("#hver").textContent = "v" + APP.version;
+// Menus réglés dans AppMod (config-site.json → menus). Nouvelle appli : déclarer ici ses écrans (mêmes identifiants que menuActions dans AppMod).
+const MENU_ACTIONS = [{id: "accueil", label: "Accueil", icon: "home"}, {id: "atv", label: "Lanceur TV", icon: "box"}, {id: "web", label: "Site web", icon: "globe"}, {id: "applis", label: "Applis", icon: "grid"}].map(a => Object.assign(a, {el: '#nav [data-go="' + a.id + '"]',
+  run: () => go(a.id), active: () => { const b = document.querySelector('#nav [data-go="' + a.id + '"]'); return !!(b && b.hasAttribute("aria-current")); }}));
+ModProdMenu.init({config: MP.config.menus, assets: /(^|\.)modprod\.app$/.test(location.hostname) ? "" : APP.site, actions: MENU_ACTIONS, native: ["#nav"], topAfter: "header.top",
+  // En-tête réglé dans AppMod (config-site.json → header.layout) : éléments de l'appli placés dans l'en-tête
+  header: {row: "header.top", parts: {icon: "#logo", title: "#ttl", tag: "#beta", version: "#hver"}}, headerConfig: MP.config.header,
+  accent: getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() || "#f08a24"});
+MP.onChange(c => { ModProdMenu.apply(c.menus); ModProdMenu.header(c.header); });
+MP.onChange(applyConfig);                 // 1) cache / défauts tout de suite
+MP.refresh();                             // 2) config en ligne quand elle arrive
+addEventListener("online", () => MP.refresh());
+document.addEventListener("visibilitychange", () => { if(document.visibilityState === "visible") MP.refresh(); });
+
+if("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")){
+  addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+}
+</script>
+</body>
+</html>
