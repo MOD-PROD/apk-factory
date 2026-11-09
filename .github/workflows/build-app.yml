@@ -76,7 +76,7 @@ on:
         description: "Identifiant de tâche site (laisser vide en lancement manuel)"
         default: ""
       use_native_ui:
-        description: "(ignoré) base WebTheme toujours utilisée"
+        description: "(ignoré) base de production toujours utilisée"
         type: boolean
         default: false
       atv_mode:
@@ -128,9 +128,8 @@ jobs:
             | python3 -c 'import json,sys; print(json.load(sys.stdin)["download_url"])')
           echo "Patches : $MPP_URL"
           curl -fsSL -o tools/patches.mpp "$MPP_URL"
-          # Base WebTheme (switch in-app par appui long)
-          echo "Base WebTheme : native-ui-experimental"
-          curl -fsSL -o tools/apk-base.apk "https://github.com/${PATCHES_REPO}/releases/download/native-ui-experimental/apk-base.apk"
+          # Base de production (thème des sites web et réglages Android 15+ intégrés)
+          curl -fsSL -o tools/apk-base.apk "https://github.com/${PATCHES_REPO}/releases/download/base-apk/apk-base.apk"
           curl -fsSL -o tools/atv-base.apk "https://github.com/${PATCHES_REPO}/releases/download/base-apk/atv-base.apk"
           java -jar tools/morphe.jar options-create -p tools/patches.mpp -o tools/options-template.json
           echo "MPP_URL=$MPP_URL" >> "$GITHUB_ENV"
